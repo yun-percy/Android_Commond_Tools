@@ -1,0 +1,35 @@
+#!/bin/bash
+#此脚本使用在Android 各项处理上
+#制作者：振云
+PATH=/bin:/sbin:/usr/bin:usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin:$TOOLPATH
+export PATH
+
+#变量区
+
+#选项区
+while getopts :a:b:c:h opt
+do
+    case "" in
+    a) echo "a options";;
+    b) echo "b options and the value is  " ;;
+    c) echo "c options";;
+	h) echo -e "a:\ta options\nb:\tb options\nc:\tc options";;
+	*) echo -e "unknow options: \ninput -h to get help doc";;
+    esac
+done
+#函数区
+CP_51_ANDROD(){
+	if [[ -f "/etc/udev/rules.d/51-android.rules" ]]; then
+		echo -n "the Android rules "
+		echo -ne "\033[32m51-android.rules\033[0m"
+		echo " has exist"
+		echo -ne "\033[33mSkipping \033[0m"
+		echo "copy 51-android.rules...."
+	else
+		sudo cp 51-android.rules /etc/udev/rules.d/
+	fi
+}
+#流程区
+CP_51_ANDROD
+echo -e "\033[32m\nDone\n\033[0m"
+	
