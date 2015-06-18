@@ -19,8 +19,10 @@ Setup
 		cd ~/bin && chmod 777 Setup && ./Setup
 
 
-d
+d,f
 ------
+
++ d
 
 输入 d + apk/jar就能轻松将apk或者jar包反编译，例：
 
@@ -34,6 +36,16 @@ d
 
 		工具会自动查找当前目录下会不会存在 music.apk 或者 music.jar
 		并将其反编译
+
++ f
+
+输入 f 加 apk名称就能将框架加载进来，你可以这样
+
+		f framework-res.apk
+		或者：  f framework-res.apk
+		或者   f k-res.a
+
+脚本会自动去查找匹配项
 
 cs
 -------
