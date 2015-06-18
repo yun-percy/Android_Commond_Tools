@@ -35,4 +35,5 @@ LINK_BASHRC(){
 #流程区
 CP_51_ANDROD
 LINK_BASHRC
+chmod 777 ~/bin -R
 echo -e "\033[32m\nDone\n\033[0m"
