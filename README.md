@@ -10,3 +10,28 @@ Some shell script use for handler Android
 这个脚本集，大部分是由本人编写，但部分也是其它大神的智，所以这个工具集采用MIT协议，请自觉遵守。
 
                                                         振云      于 2015年6月18日 腾讯
+
+Setup
+------
+
+第一步也是最重要一步，将所有命令全部都初始化完成
+
+
+
+
+d
+------
+
+输入 d + apk/jar就能轻松将apk或者jar包反编译，例：
+
+		d music.apk
+		或者
+		d android.policy.jar
+
+如果你只输入:  
+
+		d music
+
+		工具会自动查找当前目录下会不会存在 music.apk 或者 music.jar
+		并将其反编译
+
