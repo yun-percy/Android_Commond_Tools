@@ -1,0 +1,6 @@
+APKTOOL_PATH=~/bin/apktools
+TOOL_PATH=~/bin/tools
+ANDROID_PACKAGES_PATH=~/bin/Android_test_packages
+DATE=`date "+%Y-%m-%d-%H_%M_%S" `
+DATE_INFO=`date "+%Y年%m月%d日%H时%M分 周%w" `
+export PATH=$PATH:$TOOL_PATH:$APKTOOL_PATH:$ANDROID_PACKAGES_PATH
