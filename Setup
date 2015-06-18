@@ -29,7 +29,10 @@ CP_51_ANDROD(){
 		sudo cp 51-android.rules /etc/udev/rules.d/
 	fi
 }
+LINK_BASHRC(){
+	ln -s .bashrc  ~/.bashrc
+}
 #流程区
 CP_51_ANDROD
+LINK_BASHRC
 echo -e "\033[32m\nDone\n\033[0m"
-	
