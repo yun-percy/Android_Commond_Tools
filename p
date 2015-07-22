@@ -1,8 +1,6 @@
 #!/bin/bash
 #此脚本用来 DIY ROM 用
 #制作者：陈云
-PATH=/bin:/sbin:/usr/bin:usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin:~/yun
-export PATH
 #变量区
 FILE_PATH=`pwd`
 PROJECT=$1
@@ -20,16 +18,20 @@ PUSH(){
 	adb push $PROJECT $TARGET_PATH
 	if [[ $? == 0 ]]; then
 		DONE
+		return 0
 	else
 		echo -e "\033[31mdelivery failed!\033[0m"
+		return 1
 	fi
 }
 PULL(){
 	adb pull $PROJECT $TARGET_PATH
 	if [[ $? == 0 ]]; then
 		DONE
+		return 0
 	else
 		echo -e "\033[31mdelivery failed!\033[0m"
+		return 1
 	fi
 }
 PUSH_OR_PULL(){
@@ -38,6 +40,7 @@ PUSH_OR_PULL(){
 		ret=$(adb shell "ls $PROJECT")
 		if [[ "$ret" == "" ]]; then
 			echo -e "\033[31mCan't find $PROJECT in PC nor Android Devices!\033[0m"
+			return 1
 		else
 			PULL
 		fi
@@ -50,7 +53,7 @@ PUSH_OR_PULL(){
 #主体流程区
 echo "==========================="
 echo
-echo "智能push 工具 pull "
+echo "Android push/pull Tools "
 echo "p +  file/path +path/file"
 echo
 echo "==========================="

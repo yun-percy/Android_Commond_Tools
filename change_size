@@ -1,0 +1,49 @@
+#!/bin/bash
+#此脚本用来 DIY ROM 用
+#制作者：陈云
+PATH=/bin:/sbin:/usr/bin:usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin:~/yun
+export PATH
+#变量区
+TARGET_PNG=$1
+OLD_PIX=320
+TARGET_PIX=400
+
+
+#函数区
+CHECK_OUTPUT_DIC(){
+	if [ ! -d "output" ]; then
+	  mkdir output
+
+	fi
+}
+GET_WIDTH(){
+	width_info=$(exiftool $TARGET_PNG | grep Width)
+	WIDTH=`echo $width_info|awk '{print $NF}'`
+	echo $WIDTH
+}
+CHANGE_SIZE(){
+	# TARGET_SIZE=(($WIDTH*$TARGET_PIX/OLD_PIX))
+	TARGET_SIZE=$(echo "$WIDTH*${TARGET_PIX}/$OLD_PIX"|bc)
+	echo $TARGET_SIZE
+	convert -resize $TARGET_SIZE $TARGET_PNG output/$TARGET_PNG
+}
+#主体流程区
+CHECK_OUTPUT_DIC
+if [[ "$TARGET_PNG" == "-a" ]]; then
+	for i in *.png; do
+	TARGET_PNG=$i
+	GET_WIDTH
+	if [[ $WIDTH != $TARGET_PIX ]]; then
+		CHANGE_SIZE
+	fi
+	done
+else
+	GET_WIDTH
+	if [[ $WIDTH != $TARGET_PIX ]]; then
+		CHANGE_SIZE
+	fi
+fi
+
+
+
+

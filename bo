@@ -1,8 +1,6 @@
 #!/bin/bash
-#此脚本使用在Android 各项处理上
+#此脚本用来将手机重启到bootloader
 #制作者：振云
-PATH=/bin:/sbin:/usr/bin:usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin:~/yun
-export PATH
 
 adb start-server
 TIMES=0

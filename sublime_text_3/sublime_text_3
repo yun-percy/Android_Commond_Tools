@@ -1,0 +1,6 @@
+#!/bin/bash
+# filename: sublime_text_3
+# by: pengzi
+# from: http://sublimetext.iaixue.com
+
+sh -c "'/home/percy/bin/sublime_text_3/sublime_text' --class=sublime-text '$@'"

@@ -1,11 +1,13 @@
 #!/bin/bash
 #此脚本使用在Android 各项处理上
 #制作者：振云
-PATH=/bin:/sbin:/usr/bin:usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin:~/yun
-export PATH
+
+#变量区
+# set -x
+TIMES=0
+#函数区
 
 adb start-server
-TIMES=0
 cs
 if [[ $? == 4 ]]; then
 	result=$(fastboot reboot 2>&1)

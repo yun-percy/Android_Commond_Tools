@@ -1,0 +1,35 @@
+#!/bin/bash
+#此脚本使用在Android 各项处理上
+#制作者：振云
+PATH=/bin:/sbin:/usr/bin:usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin:~/yun
+export PATH
+
+PATH=/bin:/sbin:/usr/bin:usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
+export PATH
+
+# set -x
+PROJECT=$1
+DATE=`date "+%Y-%m-%d-%H_%M_%S" `
+DATE_INFO=`date "+%Y年%m月%d日%H时%M分 周%w" `
+LOACAL_PATH=`pwd`
+OUT_PATH="$LOACAL_PATH/out"
+TOOLPATH=~/bin
+TOOLS_PATH=$TOOLPATH/tools
+SIGNAPKJAR=$TOOLS_PATH/signapk.jar
+#KEY="testkey"
+KEY="platform"
+KEY_PATH=$TOOLPATH/security
+KEY_PEM=$KEY_PATH/$KEY.x509.pem
+KEY_PK8=$KEY_PATH/$KEY.pk8
+# echo $filepath
+clear
+
+echo -n "Signing "
+echo -ne "\033[32m$PROJECT\033[0m"
+echo " ......"
+java -jar $SIGNAPKJAR $KEY_PEM $KEY_PK8 $PROJECT SIGN_$PROJECT
+
+mv $PROJECT ${PROJECT}_${DATE}
+mv SIGN_$PROJECT $PROJECT
+
+echo -e "\033[32mSign Compelete!\033[0m"

@@ -1,0 +1,6 @@
+#!/bin/bash
+# filename: sublime_text_3_fcitx
+# by: pengzi
+# from: http://sublimetext.iaixue.com
+
+sh -c "LD_PRELOAD='/home/percy/bin/sublime_text_3/sublime_text_fcitx.so' '/home/percy/bin/sublime_text_3/sublime_text' --class=sublime-text '$@'"

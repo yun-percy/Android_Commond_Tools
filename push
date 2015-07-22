@@ -1,0 +1,34 @@
+#!/bin/bash
+#此脚本使用在Android 各项处理上
+#制作者：振云
+
+#变量区
+# set -x
+BRANCH=master
+#函数区
+GET_BRANCH(){
+	BRANCH_tmp=$(git branch)
+	BRANCH=`echo $BRANCH | awk '{print $NF}'`
+	echo -n "get the current branch is: "
+	echo -e "\033[36m$BRANCH\033[0m"
+}
+#选项区
+
+while getopts a:b:c:h opt
+do
+    case "$opt" in
+    a) echo "a options";;
+    b) echo "b options and the value is $OPTARG" ;;
+    c) echo "c options";;
+	h) echo -e "a:\ta options\nb:\tb options\nc:\tc options";;
+	*) echo -e "unknow options: \ninput -h to get help doc";;
+    esac
+done
+
+#流程区
+
+GET_BRANCH
+echo "push to the remote origin....."
+git push -u origin $BRANCH
+
+echo -e "\033[32mDone!\033[0m"

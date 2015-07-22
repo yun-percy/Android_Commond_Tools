@@ -1,0 +1,79 @@
+#!/bin/bash
+#此脚本使用在Android 各项处理上
+#制作者：振云
+
+#变量区
+# set -x
+COMMAND="/cache/recovery/command"
+TMP_COMMAND="/tmp/command"
+#函数区
+GO_RECOVERY(){
+    cs
+    status=$?
+    case $status in
+	2 ) echo " 正在重启到recovery ......"
+       reco
+      GO_RECOVERY
+		;;
+	3)
+		WRITE_COMMAND_1
+
+		;;
+	4)
+	echo " 退出Fastboot模式....."
+	re
+        GO_RECOVERY
+        ;;
+esac
+}
+WRITE_COMMAND_1(){
+	echo "最后准备中,即将开始刷机"
+}
+WRITE_COMMAND_data(){
+    echo "--wipe_data" >>$TMP_COMMAND
+    echo "--locale=zh_CN" >>$TMP_COMMAND
+}
+WRITE_COMMAND_cache(){
+    echo "--wipe_cache" >>$TMP_COMMAND
+}
+WRITE_COMMAND_2(){
+    cat $TMP_COMMAND
+    p $TMP_COMMAND /tmp/
+    if [[ $? == 1 ]]; then
+    		echo "自动刷机脚本传输失败,重新传输"
+		WRITE_EXTENDEDCOMMAND
+	fi
+    adb shell "cp /tmp/command cache/recovery/"
+}
+CLEAN(){
+    rm $TMP_COMMAND
+}
+#选项区
+
+while getopts dco:h opt
+do
+    case "$opt" in
+    d)
+	GO_RECOVERY
+	WRITE_COMMAND_data
+	WRITE_COMMAND_2
+;;
+    c)
+	GO_RECOVERY
+	WRITE_COMMAND_cache
+	WRITE_COMMAND_2
+;;
+    o) echo "c options";;
+	h) echo -e "a:\ta options\nb:\tb options\nc:\tc options";;
+	*)
+GO_RECOVERY
+CLEAN
+;;
+    esac
+done
+
+#流程区
+CLEAN
+reco
+echo "自动刷机即将开始"
+echo -e "\033[32mDone!\033[0m"

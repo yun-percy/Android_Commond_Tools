@@ -1,0 +1,37 @@
+#!/bin/bash
+#此脚本用来刷入 Recovery
+#制作者：振云
+
+#变量区
+# set -x
+status=0 # 手机连接状态
+DEVICE_NAME=Unknown #手机型号
+RECOVERY_IMAGE=$1 #RECOVERY 镜像
+RECOVERY_BLOCK=dev/block/platform/*/by-name/recovery #recovery分区
+#函数区
+
+#选项区
+
+#流程区
+cs
+. getPhoneName
+cs
+status=$?
+case $status in
+	"2" )
+	p $RECOVERY_IMAGE sdcard/
+	adb shell $DEVICE_SU "dd if=sdcard/$RECOVERY_IMAGE of=$RECOVERY_BLOCK"
+	reco
+	;;
+	"3" )
+	p $RECOVERY_IMAGE /tmp/
+	adb shell "dd if=/tmp/$RECOVERY_IMAGE of=$RECOVERY_BLOCK"
+	reco
+	;;
+	"4")
+	fastboot flash recovery recovery.img
+	reco
+	;;
+esac
+echo -e "\033[32mDone!\033[0m"
+

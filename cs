@@ -1,9 +1,9 @@
 #!/bin/bash
-#此脚本用来 DIY ROM 用
-#制作者：陈云
-PATH=/bin:/sbin:/usr/bin:usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin:~/yun
-export PATH
+#此脚本使用在Android 各项处理上
+#制作者：振云
 
+#变量区
+# set -x
 TRYING_TIMES=1
 MODE="null"
 output_infomation(){
@@ -51,6 +51,9 @@ case "$result2" in
 		# default
 esac
 }
+
+#流程区
+
 adb start-server
 check_android_status
 

@@ -1,0 +1,81 @@
+#!/bin/bash
+#此脚本用来获取手机型号
+#制作者：振云
+
+#变量区
+# set -x
+DEVICE_SU="su -c"
+#函数区
+GET_DEVICE_NAME(){
+	DEVICE_NAME_tmp=$(adb shell getprop | grep "ro.product.device")
+	DEVICE_NAME=`echo $DEVICE_NAME_tmp |awk -F "[][]" '{print $(NF-1)}'`
+}
+#选项区
+GET_DEVICE_NAME
+case $DEVICE_NAME in
+	"m0" )
+		echo -n "Find "
+		echo -ne "\033[36mSamsung I9300 \033[0m"
+		SYSTEM_BLOCK=dev/block/mmcblk0p9
+		;;
+	"ja3g" )
+		echo -n "Find "
+		echo -ne "\033[36mSamsung I9500 \033[0m"
+		RECOVERY_BLOCK=/dev/block/mmcblk0p10
+		SYSTEM_BLOCK=dev/block/mmcblk0p20
+		;;
+	"hammerhead")
+		echo -n "Find "
+		echo -ne "\033[36mGoogle Nexus \033[0m"
+		RECOVERY_BLOCK=/dev/block/mmcblk0p20
+		SYSTEM_BLOCK=/dev/block/mmcblk0p25
+	;;
+	"pisces" )
+		echo -n "Find "
+		echo -ne "\033[36mXiaoMi MI3TD \033[0m"
+		RECOVERY_BLOCK=/dev/block/mmcblk0p21
+		DEVICE_SU=""
+		;;
+	"cancro" )
+		echo -n "Find "
+		echo -ne "\033[36mMI3W \033[0m"
+		RECOVERY_BLOCK=/dev/block/mmcblk0p21
+		SYSTEM_BLOCK=dev/block/mmcblk0p25
+		;;
+	"lenok" )
+		echo -n "Find "
+		echo -ne "\033[36mLG WATCH R \033[0m"
+		RECOVERY_BLOCK=/dev/block/mmcblk0p16
+		SYSTEM_BLOCK=/dev/block/mmcblk0p19
+		DEVICE_SU="su -c"
+		;;
+	"rolex" | "w1010")
+		echo -n "Find "
+		echo -ne "\033[36mZTE WATCH \033[0m"
+		RECOVERY_BLOCK=/dev/block/mmcblk0p22
+		SYSTEM_BLOCK=/dev/block/mmcblk0p26
+		DEVICE_SU=""
+	;;
+	"OnePlus" | "A0001" )
+		echo -n "Find "
+		echo -ne "\033[36mOnePlus \033[0m"
+		RECOVERY_BLOCK=/dev/block/mmcblk0p17
+		SYSTEM_BLOCK=/dev/block/mmcblk0p14
+		DEVICE_SU="su -c"
+		;;
+	"jflte" | "jfltezm" )
+		echo -n "Find "
+		echo -ne "\033[36mSamsung i9508 \033[0m"
+		RECOVERY_BLOCK=/dev/block/mmcblk0p21
+		SYSTEM_BLOCK=/dev/block/mmcblk0p16
+		BOOT_BLOCK=/dev/block/mmcblk0p19
+		DEVICE_SU="su -c"
+		;;
+
+	"*" )
+		echo -ne "\033[33mUnknow Device .....\033[0m"
+		;;
+esac
+
+echo -n "device : "
+echo -e "\033[32m$DEVICE_NAME\033[0m"

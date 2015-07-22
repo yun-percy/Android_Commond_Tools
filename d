@@ -12,14 +12,15 @@ OUT_PATH="$LOACAL_PATH/out"
 PROJECT_TYPE=`echo $PROJECT| awk -F . '{print $NF}'`
 REAL_NAME=`echo $PROJECT |sed 's/\(.*\)\..*$/\1/'`
 #选项区
-while getopts :a:b:c:h opt
+
+while getopts a:b:c:h opt
 do
-    case "" in
+    case "$opt" in
     a) echo "a options";;
-    b) echo "b options and the value is  " ;;
+    b) echo "b options and the value is $OPTARG" ;;
     c) echo "c options";;
-  h) echo -e "a:\ta options\nb:\tb options\nc:\tc options";;
-  *) echo -e "unknow options: \ninput -h to get help doc";;
+	h) echo -e "a:\ta options\nb:\tb options\nc:\tc options";;
+	*) echo -e "unknow options: \ninput -h to get help doc";;
     esac
 done
 #函数区
@@ -35,7 +36,7 @@ HEAD_INFO(){
 CHECK_PROJECT(){
   if [ "$PROJECT_TYPE" == "jar" ] || [ "$PROJECT_TYPE" == "apk" ]; then
       echo "Firsh check Past"
-  else 
+  else
     echo -e "\033[31m$PROJECT isn't a Android file ! \033[0m"
     exit
   fi
@@ -46,7 +47,7 @@ CHECK_PROJECT(){
         PROJECT=$PROJECT_JAR
       else
         PROJECT=$PROJECT_APK
-      fi 
+      fi
       echo -n "but I find a "
       echo -ne "\033[33mapk/jar \033[0m"
       echo -n "named as you input,Do you means decode "

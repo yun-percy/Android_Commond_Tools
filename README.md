@@ -7,7 +7,7 @@ Some shell script use for handler Android
 
 让我们看看shell能给我们带来什么。
 
-这个脚本集，大部分是由本人编写，但部分也是其它大神的智，所以这个工具集采用MIT协议，请自觉遵守。
+这个脚本集，大部分是由本人编写，但部分也是其它大神的智慧，所以这个工具集采用MIT协议，请自觉遵守。
 
                                                         振云      于 2015年6月18日 腾讯
 
@@ -18,11 +18,20 @@ Setup
 
 		cd ~/bin && chmod 777 Setup && ./Setup
 
+它做了什么?
 
-d,f
++ 配置好51-android rulues 解决99%的手机连接问题
+
++ 替换原系统弱爆了的bashrc
+
++ 一键给你搭建好linux的源码编译环境
+
++ 安装 git-cola gitk 等git工具,安装 wget/trimage工具
+
+d,b,i,f,dump
 ------
 
-+ d
++ d (decode apk)
 
 输入 d + apk/jar就能轻松将apk或者jar包反编译，例：
 
@@ -30,12 +39,35 @@ d,f
 		或者
 		d android.policy.jar
 
-如果你只输入:  
+如果你只输入:
 
 		d music
 
 		工具会自动查找当前目录下会不会存在 music.apk 或者 music.jar
 		并将其反编译
+
++ b (build apk)
+
+输入 b + 文件夹 就能轻松将一个文件夹回编译成一个apk,输出在 out目录下,当然,加入了智能查找目标的功能<br>
+以及自动使用TOS 的密钥签名和自动对其功能,为了不冲掉前面的回编译结果,还加入了自动备份功能.
+
+		b music
+
++ dump
+
+输入 dump + apk 就能轻松查看应用的名称,包名,主启动类名
+
+输入 dump -s +apk 还能启动你手机上的这个apk(前提是你的手机安装了这个apk,配合下文中的i脚本,效果杠杆的)
+
+		dump -s music.apk    #打印这个music的名称,包名,主启动类名,并且尝试在你的手机上启动它
+
++ i
+
+输入 i + apk 就能将这个apk安装到你的手机,并且启动它
+
+		i music.apk  安装并启动music.apk
+
+
 
 + f
 
@@ -82,5 +114,61 @@ bo , re , reco , p
 
 当连接状态不佳的时候，这个脚本会反复的推送/抽取，直到完成目的。（由于cs的功劳）
 
++ m
+
+挂载你手机上的 system目录,使你能对system文件夹里面的文件进行增删,支持正常模式和recovery.使用;
+
+		m
+
++ sign
+
+输入 sign + apk 就能将这个apk签名,例:
+
+		sign music.apk
 
 
+GIT相关
+-----
+
+push
+
+将当前commit的内容.推送的当前分支里面去,这个脚本会检查当前分支是什么,然后推送到远程的当前分支里面去
+
+		push
+
+gp
+
+git push 的简写,目前支持两种模式
+
+		gp -i  #查看当前修改
+		gp -m "commit message" #一键推送
+		gp -im "commit message" #上面两种相加
+		gp -f #第一次推送,默认信息为 first commit
+
+
+文件夹介绍
+=======
+
++ Android_test_package/
+
+里面有三个zip文件,三个刷机包,一个是recovery下的文件管理器,一个是正常刷机包(但是什么都不会改动,只是一个空包),一个错误刷机包
+
++ apktools
+
+里面有四个版本的apktools, 可以自由切换
+
++ icons
+
+ubuntu下醒目的文件夹图标
+
++ keys
+
+一般签名
+
++ security
+
+TOS的dd签名密钥
+
++ tools
+
+一些linux下的Android可执行文件: aapt  adb  dexopt fastboot mkbootimg signapk.jar zipalign

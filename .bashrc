@@ -52,6 +52,9 @@ alias ..='cd ..'
 alias ...='cd ../..'
 #自然，去到上两层目录。
 
+alias ....='cd ../../../'
+alias .....='cd ../../../../'
+#cd 加强
 extract() {
     if [ -f $1 ] ; then
       case $1 in
@@ -103,6 +106,7 @@ alias meminfo='free -m -l -t'
 alias volume="amixer get Master | sed '1,4 d' | cut -d [ -f 2 | cut -d ] -f 1"
 #显示当前音量设置。
 
+#网络
 
 #对于所有用在互联网和本地网络的命令，也有一些神奇的别名给它们。
 
@@ -146,8 +150,12 @@ findout(){
 
 }
 
+lun(){
+#初始化机型快捷命令
+    lunch cm_$1-eng
+}
 mc(){
-    make recoveryimage -j16 
+    make recoveryimage -j16
     #编译recovery用的快捷命令
 }
 sj(){
@@ -242,4 +250,12 @@ repo_sync(){
         repo sync
     done
     echo -e "\033[32mDone!\033[0m"
+}
+GET_REL_NAME(){
+    REAL_NAME=`echo $1 |sed 's/\(.*\)\..*$/\1/'`
+    echo "$REAL_NAME"
+}
+ads(){
+    cs
+    adb shell
 }
