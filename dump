@@ -1,7 +1,10 @@
 #!/bin/bash
 #此脚本使用在Android 各项处理上
 #制作者：振云
-
+if [[ $1 == "-x" ]]; then
+    set -x
+    shift
+fi
 #变量区
 # set -xml
 filepath=`pwd`
@@ -30,9 +33,16 @@ MAIN(){
 	GET_APP_PACKAGE_NAME
 	GET_APP_MAIN_ACTIVITY
 }
+HELP(){
+	echo -e "s:\tuse:\n \t\tdump -s [apk]\t\t to start this app in your Phone"
+    echo -e "i:\tuse:\b \t\tdump -i [apk]\t\t to get apk package name"
+}
 
+if [[ ! $1 ]]; then
+    HELP 
+fi
 #选项区
-while getopts s:b:c:h opt
+while getopts s:i:c:h opt
 do
     case "$opt" in
     s)
@@ -44,9 +54,15 @@ do
 	adb shell am start -n ${APP_PACKAGE_NAME}/${APP_MAIN_ACTIVITY}
 	break
 ;;
-    b) echo "b options and the value is  " ;;
+    i) 
+        apk=$OPTARG 
+        GET_APP_NAME
+        GET_APP_PACKAGE_NAME
+         ;;
     c) echo "c options: $OPTARG";;
-	h) echo -e "s:\tuse:\n \t\tdump -s [apk]\n\t to start this app in your Phone\nb:\tb options\nc:\tc options";;
+	h)
+        HELP
+        ;;
 	*) MAIN;;
     esac
 done

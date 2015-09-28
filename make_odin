@@ -1,0 +1,20 @@
+#!/bin/bash
+#此脚本使用在Android 各项处理上
+#制作者：振云
+
+#变量区
+if [[ $1 == "-x" ]]; then
+	set -x
+	shift
+fi
+LOCAL_PATH=`pwd`
+TARGET=$1
+tar -cf $TARGET.tar $TARGET
+md5sum -t ${TARGET}.tar >> ${TARGET}.tar
+# mv ${TARGET}.tar New_${TARGET}.tar.md5
+echo -e "\033[32moutput==>${LOCAL_PATH}/New_${TARGET}.tar.md5\033[0m"
+#函数区
+
+#流程区
+
+# echo -e "\033[32mDone!\033[0m"

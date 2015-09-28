@@ -3,13 +3,27 @@
 #制作者：振云
 
 #变量区
-# set -x
+if [[ $1 == "-x" ]]; then
+	set -x
+	shift
+fi
 status=0 # 手机连接状态
 DEVICE_NAME=Unknown #手机型号
 RECOVERY_IMAGE=$1 #RECOVERY 镜像
 RECOVERY_BLOCK=dev/block/platform/*/by-name/recovery #recovery分区
 #函数区
-
+FLASH_RECOVERY(){
+	echo $ret
+	ret=`echo $ret | awk '{print $(NF-4)'}`
+	if [[ "$ret" != "in" ]]; then
+		echo -n "flash recovery "
+		echo -ne "\033[31mfailed\033[0m"
+		echo " try to use su -c ....."
+        ret=$(adb shell su -c "dd if=sdcard/$RECOVERY_IMAGE of=$RECOVERY_BLOCK")
+        echo $ret
+        FLASH_RECOVERY
+	fi
+}
 #选项区
 
 #流程区
@@ -20,7 +34,8 @@ status=$?
 case $status in
 	"2" )
 	p $RECOVERY_IMAGE sdcard/
-	adb shell $DEVICE_SU "dd if=sdcard/$RECOVERY_IMAGE of=$RECOVERY_BLOCK"
+	ret=$(adb shell $DEVICE_SU "dd if=sdcard/$RECOVERY_IMAGE of=$RECOVERY_BLOCK")
+    FLASH_RECOVERY
 	reco
 	;;
 	"3" )

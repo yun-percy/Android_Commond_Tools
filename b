@@ -87,12 +87,11 @@ clear
 
 echo ''
 echo '====================================================='
-echo 'Android Apktools build command with apktool200rc4.jar'
-echo 'Android 反编译打包指令，打包版本为: apktool200rc4.jar'
+echo "Android Apktools build command with $APKTOOLS_JAR "
+echo "Android 反编译打包指令，打包版本为: $APKTOOLS_JAR"
 echo "打包时间为： $DATE_INFO "
 echo
 echo
-
 mkdir $OUT_PATH 2>/dev/null
 if [[ $? == 1 ]]; then
 	echo -en "\033[33mcan't mkdir $OUT_PATH:  \033[0m"

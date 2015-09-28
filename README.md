@@ -22,13 +22,13 @@ Setup
 
 + 配置好51-android rulues 解决99%的手机连接问题
 
-+ 替换原系统弱爆了的bashrc
++ 替换原系统弱爆了的bashrc,并且每次新开终端会自动导入envsetup这个脚本的变量。以后如果有常用的变量可以在这个里面初始化。
 
 + 一键给你搭建好linux的源码编译环境
 
 + 安装 git-cola gitk 等git工具,安装 wget/trimage工具
 
-d,b,i,f,dump
+apk处理工具:d,b,i,f,dump，sign
 ------
 
 + d (decode apk)
@@ -79,6 +79,26 @@ d,b,i,f,dump
 
 脚本会自动去查找匹配项
 
++ sign
+
+sign提供几个选项：<br>
+-a:  签名当前目录下所有apk（不包括子文件夹）
+
+        sign -a
+        
+-o:　签名单个apk
+
+        sign -o music.apk
+       
+-l 签名当前目录下所有文件（包括子文件夹所有文件）
+
+        sign -l
+        
+签名之前的文件会备份到　/tmp/apk_bak下面
+
+adb处理工具:cs.bo,re,reco,p
+======
+
 cs
 -------
 
@@ -120,12 +140,33 @@ bo , re , reco , p
 
 		m
 
-+ sign
++ getPhoneNane
 
-输入 sign + apk 就能将这个apk签名,例:
+获取手机信息，目前是采用人工完善的方式来获取，根据 getprop获取到的信息来查找相关信息
 
-		sign music.apk
+        getPhoneName	
+		
+Android 综合
+=========
 
+基于上面的快捷命令，你可以轻易整合的写出一些常用的命令：
+
++ flash_recovery
+
+它的作用是刷人recovery，得益于getPhoneName这个应用，它会从这个脚本获取机型的相关信息，然后获取一些分区信息，将recovery刷入到手机
+
+        flash_recovery recovery.img
+        
++ test_factory_reset
+
+模拟恢复出厂设置的脚本集
+
+        test_factory_reset
++ test_ota
+
+一键刷机的脚本 
+
+        test_ota update.zip
 
 GIT相关
 -----
@@ -145,6 +186,18 @@ git push 的简写,目前支持两种模式
 		gp -im "commit message" #上面两种相加
 		gp -f #第一次推送,默认信息为 first commit
 
+其它工具：
+========
+
++ change_size
+
+将图片的尺寸修改为指定尺寸
+
+        change_size hello.png
+        
+如果要批量修改，可以直接输入
+
+        change_size -a
 
 文件夹介绍
 =======

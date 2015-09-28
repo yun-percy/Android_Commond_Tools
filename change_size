@@ -5,15 +5,27 @@ PATH=/bin:/sbin:/usr/bin:usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin:~/yun
 export PATH
 #变量区
 TARGET_PNG=$1
-OLD_PIX=320
-TARGET_PIX=400
+if [[ $2 ]]; then
+    OLD_PIX=$2
+else 
+    echo "原始尺寸设置为（宽） 320"
+    OLD_PIX=320
+fi
+if [[ $3 ]]; then
+    TARGET_PIX=$3
+else
+    echo "尺寸设置为（宽） 400"
+    TARGET_PIX=400
+fi
 
 
 #函数区
 CHECK_OUTPUT_DIC(){
 	if [ ! -d "output" ]; then
 	  mkdir output
-
+    else
+        rm -rf output
+        CHECK_OUTPUT_DIC
 	fi
 }
 GET_WIDTH(){

@@ -27,8 +27,8 @@ done
 HEAD_INFO(){
   echo ''
   echo '====================================================='
-  echo 'Android Apktools decode command with apktool200rc4.jar'
-  echo 'Android 反编译解包指令，打包版本为: apktool200rc4.jar'
+  echo "Android Apktools decode command with $APKTOOLS_JAR"
+  echo "Android 反编译解包指令，打包版本为: $APKTOOLS_JAR"
   echo "解包时间为： $DATE_INFO "
   echo
   echo

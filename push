@@ -8,7 +8,7 @@ BRANCH=master
 #函数区
 GET_BRANCH(){
 	BRANCH_tmp=$(git branch)
-	BRANCH=`echo $BRANCH | awk '{print $NF}'`
+	BRANCH=`echo $BRANCH_tmp | awk '{print $NF}'`
 	echo -n "get the current branch is: "
 	echo -e "\033[36m$BRANCH\033[0m"
 }

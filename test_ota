@@ -1,75 +1,85 @@
 #!/bin/bash
-#此脚本用来测试OTA使用
-#制作者：陈云
+#此脚本使用在Android 各项处理上
+#制作者：振云
 
 #变量区
+if [[ $1 == "-x" ]]; then
+	set -x
+	shift
+fi
 FILE=$1
 COMMAND="/cache/recovery/command"
 TMP_COMMAND="/tmp/command"
-PACKAGE_PATH1=/sdcard
-PACKAGE_PATH2=/sdcard/0
 FILE_BASE=`basename $FILE`
-set -x
+. getPhoneName
 #函数区
-WRITE_COMMAND(){
-	echo "最后准备中,即将开始刷机"
-    echo "--update_package=$PACKAGE_PATH2/$FILE_BASE" >>$TMP_COMMAND
-    cat $TMP_COMMAND
-    p $TMP_COMMAND $PACKAGE_PATH/
-    if [[ $? == 1 ]]; then
-    		echo "自动刷机脚本传输失败,重新传输"
-    		CLEAN
-		WRITE_COMMAND
-	fi
-   cp_result=$(adb shell "cp $PACKAGE_PATH/command cache/recovery/")
-
-   cp_result_tmp=`echo $cp_result | awk '{print $(NF-1)}'`
-   cp_result_tmp=`echo $cp_result_tmp`
-   if [[ "$cp_result_tmp" == "Permission" ]]; then
-   	echo $cp_result
-   	cp_result=$(adb shell su -c "cp $PACKAGE_PATH/command cache/recovery/")
-   	echo $cp_result
-   fi
-}
 CLEAN(){
-    rm $TMP_COMMAND
+	rm $TMP_COMMAND
 }
-GO_RECOVERY(){
-    cs
-    status=$?
-    case $status in
-	2 )
-	PACKAGE_PATH=$PACKAGE_PATH1
-       	echo "正在将刷机包传输到内存卡......"
-	p $FILE $PACKAGE_PATH/
-	if [[ $? == 1 ]]; then
-		echo -e "\033[31m传输失败,重新传送\033[0m"
-		GO_RECOVERY
-		clear
-	fi
-		;;
-	3)
+PUSH_FILE(){
 	echo "正在将刷机包传输到内存卡......"
-	PACKAGE_PATH=$PACKAGE_PATH2
-	p $FILE $PACKAGE_PATH/
+	p $FILE $SDCARD_PATH2
 	if [[ $? == 1 ]]; then
 		echo -e "\033[31m传输失败,重新传送\033[0m"
-		GO_RECOVERY
-		clear
+		sleep 2
+		PUSH_FILE
 	fi
+}
+GET_CURRENT_STATUS(){
+	cs
+	status=$?
+	case $status in
+		2 )
+			m
+			SDCARD_PATH2=sdcard
+			PUSH_FILE
+			;;
+		3 )
+			ｍ
+			SDCARD_PATH2=$SDCARD_PATH
+			PUSH_FILE
 		;;
-	4)
-	echo " 退出Fastboot模式....."
-	re
-        GO_RECOVERY
-        ;;
+		4)
+			echo " 退出Fastboot模式....."
+			re
+			GET_CURRENT_STATUS
+		;;
 esac
 }
-#主体流程区
+WRITE_COMMAND(){
+	echo "最后准备中,即将开始刷机"
+	echo "--update_package=$SDCARD_PATH/$FILE_BASE" >$TMP_COMMAND
+	cat $TMP_COMMAND
+}
+PUSH_COMMAND(){
+	p $TMP_COMMAND $SDCARD_PATH2
+	if [[ $? == 1 ]]; then
+		echo "自动刷机脚本传输失败,重新传输"
+		CLEAN
+		sleep 2
+		PUSH_COMMAND
+    fi 
+    m
+	cp_result=$(adb shell "cp $SDCARD_PATH2/command cache/recovery/")
+    echo $cp_result
+	if [[ $cp_result != "" ]]; then
+		cp_result_tmp=`echo $cp_result | awk '{print $(NF-1)}'`
+		cp_result_tmp=`echo $cp_result_tmp`
+		if [[ "$cp_result_tmp" == "Permission" ]]; then
+		echo $cp_result
+		cp_result=$(adb shell su -c "cp $SDCARD_PATH/command cache/recovery/")
+	 	echo $cp_result
+	fi
+	fi
+}
+#选项区
+
+#流程区
 CLEAN
-GO_RECOVERY
+GET_CURRENT_STATUS
 WRITE_COMMAND
+PUSH_COMMAND
 CLEAN
 reco
 echo "自动刷机即将开始"
-m
+echo -e "\033[32mDone!\033[0m"

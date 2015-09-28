@@ -1,35 +1,62 @@
 #!/bin/bash
-#此脚本使用在Android 各项处理上
+#此脚本用来签名apk文件
+#a:签名当前所有apk文件
+#o: 签名单个文件
+#l:签名当前目录（包括子目录中所有的apk文件）
+#之前 的文件会备份到 /tmp/apk_bak下面
 #制作者：振云
-PATH=/bin:/sbin:/usr/bin:usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin:~/yun
-export PATH
 
-PATH=/bin:/sbin:/usr/bin:usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
-export PATH
-
+#变量区
 # set -x
-PROJECT=$1
-DATE=`date "+%Y-%m-%d-%H_%M_%S" `
-DATE_INFO=`date "+%Y年%m月%d日%H时%M分 周%w" `
-LOACAL_PATH=`pwd`
-OUT_PATH="$LOACAL_PATH/out"
-TOOLPATH=~/bin
-TOOLS_PATH=$TOOLPATH/tools
-SIGNAPKJAR=$TOOLS_PATH/signapk.jar
-#KEY="testkey"
-KEY="platform"
-KEY_PATH=$TOOLPATH/security
-KEY_PEM=$KEY_PATH/$KEY.x509.pem
-KEY_PK8=$KEY_PATH/$KEY.pk8
-# echo $filepath
-clear
+TMP_APK_FILE=/tmp/apk_list
+APK_BAK=/tmp/apk_bak
+if [ ! -d "$APK_BAK" ]; then
+  mkdir $APK_BAK
+fi
+#函数区
+SIGN_APK(){
+	echo -n "Signing "
+	echo -ne "\033[32m$PROJECT\033[0m"
+	echo " ......"
+	java -jar $SIGNAPKJAR $KEY_PEM $KEY_PK8 $PROJECT ${PROJECT}_SIGN
+	APP_NAME=`basename ${PROJECT}`
+	echo $APP_NAME
+	mv $PROJECT $APK_BAK/$APP_NAME
 
-echo -n "Signing "
-echo -ne "\033[32m$PROJECT\033[0m"
-echo " ......"
-java -jar $SIGNAPKJAR $KEY_PEM $KEY_PK8 $PROJECT SIGN_$PROJECT
-
-mv $PROJECT ${PROJECT}_${DATE}
-mv SIGN_$PROJECT $PROJECT
-
+	mv ${PROJECT}_SIGN $PROJECT
+}
+#选项区
+while getopts :ao:lh opt
+do
+    case "$opt" in
+	a) echo "a options to deal all apk in current dir "
+		for i in *.apk; do
+			PROJECT=$i
+			SIGN_APK
+		done
+	;;
+	o) echo "Only  sign one apk"
+		PROJECT=$OPTARG
+		SIGN_APK
+	;;
+	l) echo "l  options for Android L"
+	find -name *.apk > $TMP_APK_FILE
+	while read apkline; do
+		PROJECT=$apkline
+		SIGN_APK
+	done < $TMP_APK_FILE
+	;;
+	h)
+		echo -e "  此脚本用来签名apk文件
+  -a:签名当前所有apk文件
+  -o + apkfile: 签名单个文件
+  -l:签名当前目录（包括子目录中所有的apk文件）
+  之前的文件会备份到 /tmp/apk_bak下面"
+	;;
+	\?)
+	echo -e "unknow options:$opt \ninput -h to get help doc"
+	;;
+    esac
+done
+#流程区
 echo -e "\033[32mSign Compelete!\033[0m"

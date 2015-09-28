@@ -5,7 +5,6 @@
 #变量区
 #set -x
 DEVICE_NAME=COMMON
-SYSTEM_BLOCK=/dev/block/platform/*/by-name/system
 #函数区
 get_block(){
 	path=$(adb shell $DEVICE_SU "ls -al dev/block/platform/*/by-name"| grep system)
@@ -24,7 +23,7 @@ mount_block(){
 	fi
 }
 MOUNT_BLOCK(){
-		adb shell su -c "mount -o remount,rw $SYSTEM_BLOCK /system"
+		adb shell $DEVICE_SU "mount -o remount,rw $SYSTEM_BLOCK /system"
 }
 #选项区
 
