@@ -3,4 +3,4 @@
 # by: pengzi
 # from: http://sublimetext.iaixue.com
 
-sh -c "'/home/percy/bin/sublime_text_3/sublime_text' --class=sublime-text '$@'"
+sh -c "'/home/yun/bin/sublime_text_3/sublime_text' --class=sublime-text '$@'"
