@@ -1,62 +1,15 @@
-#!/bin/bash
-#此脚本用来 DIY ROM 用
-#制作者：陈云
-
-#变量区
-TIMES=0
-FIRST_USE=0
-#函数区
-CHECK_STATUS(){
-	cs
-	status=$?
-	((FIRST_USE++))
-	echo $status
-	if [[ $status == 4 ]]; then
-		BOOTLOADER_TO_RECOVERY
-		CHECK_STATUS
-	elif [[ $status == 2 ]]; then
-		SYSTEM_TO_RECOVERY
-		CHECK_STATUS
-	elif [[ $status == 3 ]]; then
-		if [[ $FIRST_USE == 1 ]]; then
-			SYSTEM_TO_RECOVERY
-		else
-			echo -n "Successful into "
-			echo -ne "\033[32mRecovery\033[0m"
-			echo "Mode"
-		fi
-	fi
-
-}
-BOOTLOADER_TO_RECOVERY(){
-	result=$(fastboot reboot)
-	echo -e "\033[36mGo To Main recovery| 即将重启到recovery\033[0m"
-	status=`echo $result|awk -F : '{print $1}'`
-	while [[ "$status" == "error" ]]; do
-		echo -e "\033[31m$result\033[0m"
-		echo -e "\033[33m$TIMES: we will try in 3 seconds....\033[0m"
-		sleep 2
-		((TIMES++))
-		result=$(fastboot reboot)
-		status=`echo $result|awk -F : '{print $1}'`
-	done
-
-}
-SYSTEM_TO_RECOVERY(){
-	result=$(adb reboot recovery)
-	echo -e "\033[36mGo To Main Recovery| 即将重启到Recovery\033[0m"
-	status=`echo $result|awk -F : '{print $1}'`
-	while [[ "$status" == "error" ]]; do
-		echo -e "\033[31m$result\033[0m"
-		echo -e "\033[33m$TIMES: we will try in 3 seconds....\033[0m"
-		sleep 2
-		((TIMES++))
-		result=$(adb reboot recovery)
-		status=`echo $result|awk -F : '{print $1}'`
-	done
-}
-#主体流程区
-adb start-server
-CHECK_STATUS
-
-
+#!/usr/bin/python
+#-*- coding:utf-8 -*-
+#此脚本使用在Android 各项处理上
+#制作者：振云
+import GetDeviceStatus
+import commands
+status=GetDeviceStatus.cs_wait()
+# print status
+if status==2:
+    print "当前处在fastboot模式，下面会进入正常模式，请再执行一次此命令"
+    output=commands.getoutput('fastboot reboot')
+    print output
+else:
+    output=commands.getoutput('adb reboot recovery')
+    print output

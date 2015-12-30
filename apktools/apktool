@@ -41,8 +41,11 @@ progdir=`pwd`
 prog="${progdir}"/`basename "${prog}"`
 cd "${oldwd}"
  # jarfile=apktool200b9.jar
- jarfile=apktool200rc4.jar
-
+if [[ -f '/tmp/apktool_jar' ]]; then
+     jarfile=`cat /tmp/apktool_jar`
+else
+jarfile=$APKTOOLS_JAR
+fi
 libdir="$progdir"
 if [ ! -r "$libdir/$jarfile" ]
 then

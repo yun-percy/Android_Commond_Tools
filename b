@@ -1,133 +1,132 @@
-#!/bin/bash
+#!/usr/bin/python
+#-*- coding:utf-8 -*-
 #此脚本使用在Android 各项处理上
 #制作者：振云
+import argparse
+import random
+import common
+import sys
+import os
+from common import bcolors
+import commands
+#-------------参数区---------------------
+parse=argparse.ArgumentParser(description="this Python script is used for build apk ")
+parse.add_argument('-k',type=str,choices=['platform','test','shared','media','zte'],help="<key> Key to use to sign the apk, default is platform key")
+parse.add_argument('-j',type=str,choices=['152','200b9','200rc2','200rc4','200'],help="<jar> apktool.jar to use to build the apk, default is apktool_2.0.0.jar")
+parse.add_argument('files',type=str,help="<apk or jar> input jar or apk to decode it")
+args=parse.parse_args()
+apktool_jar='apktool V200'
+signapk_jar='null'
+key_pem='null'
+key_pk8='null'
+project_name='null'
+#-------------函数区---------------------
+def set_jar():
+	global apktool_jar
+	if args.j:
+		common.set_apktool_jar(args.j)
+		apktool_jar='apktool V'+args.j
+	else:
+		common.set_apktool_jar('200')
+		apktool_jar='apktool V200'
+def set_signkey():
+	global signapk_jar,key_pem,key_pk8
+	signapk_jar=common.read_signapk_jar()
+	key_path=common.read_key_path()
+	print args.k
+	if args.k=='zte':
+		key_pem=key_path+'/zte/platform.x509.pem'
+		key_pk8=key_path+'/zte/platform.pk8'
+		print key_pem,key_pk8
+	elif args.k and args.k!='platform':
+		key_pem=key_path+'/'+args.k+'.x509.pem'
+		key_pk8=key_path+'/'+args.k+'.pk8'
+		print key_pem,key_pk8
+	else:
+		key_pem=key_path+'/platform.x509.pem'
+		key_pk8=key_path+'/platform.pk8'
+		print key_pem,key_pk8
+def check():
+	if os.path.isdir(project):
+		pass
+	else:
+		print "The Target: "+bcolors.LIGHT_BLUE+project+bcolors.ENDC+" is "+bcolors.FAIL+"Not Exist"+bcolors.ENDC
+		sys.exit(1)
+def backup_project(project):
+	print project
+	if os.path.isfile('out/'+project):
+		time=str(common.get_time())
+		os.renames('out/'+project, 'out/'+time+'_'+project)
+def build_jar_apk():
+	global project_name
+	project_name=common.get_file_name_only(project)
+	if '.out' in project:
+		backup_project(project_name)
+		cmd='apktool b '+project+' -o out/'+project_name
+		print cmd
+		(status,output)=commands.getstatusoutput(cmd)
+		print status,output
+		if status ==0:
+			print 'build '+bcolors.OKBLUE+project+bcolors.OKGREEN+' Done!'+bcolors.ENDC
+			print 'OutPut---->'+bcolors.OKGREEN+os.getcwd()+'/out/'+project_name+bcolors.ENDC
+			sys.exit(0)
+		else:
+			print bcolors.FAIL+'Build FAIL!'+bcolors.ENDC
+			sys.exit(1)
+	else :
+		backup_project(project_name+'.apk')
+		cmd='apktool b '+project+' -o out/'+project_name+'_decode.apk'
+		print cmd
+		(status,output)=commands.getstatusoutput(cmd)
+		print status,output
+		if status ==0:
+			print 'build '+bcolors.OKBLUE+project+bcolors.OKGREEN+' Done!'+bcolors.ENDC
+		else:
+			print bcolors.FAIL+'Build FAIL!'+bcolors.ENDC
+			sys.exit(1)
+def sign_apk():
+	cmd='java -jar '+signapk_jar+' '+key_pem+' '+key_pk8+' out/'+project_name+'_decode.apk'+' out/'+project_name+'_sign.apk'
+	print cmd
+	(status,output)=commands.getstatusoutput(cmd)
+	if status ==0:
+		print 'Sign '+bcolors.OKBLUE+project+bcolors.OKGREEN+' Done!'+bcolors.ENDC
+	else:
+		print bcolors.FAIL+'Sign FAIL!'+bcolors.ENDC
+		sys.exit(1)
+def zipalign_apk():
+	print "starting zipalign ...."
+	cmd='zipalign 4 out/'+project_name+'_sign.apk out/'+project_name+'.apk'
+	# print cmd
+	(status,output)=commands.getstatusoutput(cmd)
+	# print status,output
+	if status ==0:
+		print 'zipalign '+bcolors.OKBLUE+project+bcolors.OKGREEN+' Done!'+bcolors.ENDC
+	else:
+		print bcolors.FAIL+'zipalign FAIL!'+bcolors.ENDC
+		sys.exit(1)
+def delete_orign_files():
+	import shutil
+	if os.path.isdir(project+'/build'):
+		shutil.rmtree(project+'/build')
+	if os.path.isdir(project+'/original'):
+		shutil.rmtree(project+'/original')
+def head_info():
+	print """\n=====================================================
+Android Apktools build command with """+bcolors.LIGHT_BLUE+apktool_jar+bcolors.ENDC+"""
+Android 反编译打包指令，打包版本为: """+bcolors.LIGHT_BLUE+apktool_jar+bcolors.ENDC+"""
+打包时间为： """+bcolors.OKBLUE+time_info+bcolors.ENDC
 
-#变量区
-# set -x
-PROJECT=$1
-LOACAL_PATH=`pwd`
-OUT_PATH="$LOACAL_PATH/out"
-#选项区
-while getopts :k:b:c:h opt
-do
-    case "" in
-    a) echo "a options";;
-    b) echo "b options and the value is  " ;;
-    c) echo "c options";;
-	h) echo -e "-k:\tuse custom keys\nb:\tb options\nc:\tc options";;
-	*) echo -e "unknow options: \ninput -h to get help doc";;
-    esac
-done
-#函数区
-BACKUP(){
-	backup=0
-	if [ -f "$OUT_PATH/$PROJECT.apk" ]; then
-	 mv $OUT_PATH/$PROJECT.apk $OUT_PATH/${PROJECT}$DATE.apk 2>/dev/null
-	 ((backup++))
-	fi
-	if [ -f "$OUT_PATH/${LOACAL_PATH}_decode.apk" ]; then
-	 	mv $OUT_PATH/${LOACAL_PATH}_decode.apk $OUT_PATH/${LOACAL_PATH}${DATE}_decode 2>/dev/null
-	((backup++))
-	fi
-	# echo $backup
-	if [[ $backup != 0 ]]; then
-		echo -e "\033[32mbackup successd!\033[0m"
-	else
-		echo "No need back up"
-	fi
-}
-BUILD(){
-	echo -e "\033[36mbuilding $PROJECT .......\033[0m"
-	set -e
-	apktool b $LOACAL_PATH/$PROJECT -o $OUT_PATH/${PROJECT}_decode.apk
-
-	echo -e "\033[32mbuild $PROJECT.apk compeleted\033[0m"
-}
-SIGN(){
-	echo -e "\033[36msigning $PROJECT.apk .....\033[0m"
-	 java -jar $SIGNAPKJAR $KEY_PEM $KEY_PK8 $OUT_PATH/${PROJECT}_decode.apk $OUT_PATH/${PROJECT}_SIGN.apk
-	 echo -e "\033[32msign $PROJECT.apk compeleted\033[0m"
-}
-DLETED_ORIGIN_FILES(){
-	if [ -d "$PROJECT/build" ] && [ -d "$PROJECT/original" ]; then
-		echo "Do you  want delete $PROJECT/original and $PROJECT/build?"
-		read -n 1 -p "(\"y\"to delete,other key to skip):  " delete_orign_files
-	if [[ $delete_orign_files == "y" ]]; then
-		if [ ! -d "$PROJECT/build" ]; then
-	  		echo "skip rm build...."
-		else
-			rm -r $PROJECT/build 2> /dev/null
-		fi
-		if [ ! -d "$PROJECT/original" ]; then
-	  		echo "skip rm original"
-		else
-			rm -r $PROJECT/original 2> /dev/null
-		fi
-	fi
-fi
-}
-ZIPALIGN(){
-	echo "starting zipalign ...."
-	$TOOLS_PATH/zipalign 4 $OUT_PATH/${PROJECT}_SIGN.apk $OUT_PATH/${PROJECT}.apk
-	echo -n "zipalign"
-	echo -e "\033[32m Done !\033[0m"
-}
-
-CLEAN_BUILD(){
-	echo "check last build folder ....."
-	if [ -d "$LOACAL_PATH/$PROJECT/build" ]; then
-	  echo "build folder exitst, deleting it.... "
-	  rm -rf $LOACAL_PATH/$PROJECT/build
-	fi
-}
-
-#流程区
-
-clear
-
-echo ''
-echo '====================================================='
-echo "Android Apktools build command with $APKTOOLS_JAR "
-echo "Android 反编译打包指令，打包版本为: $APKTOOLS_JAR"
-echo "打包时间为： $DATE_INFO "
-echo
-echo
-mkdir $OUT_PATH 2>/dev/null
-if [[ $? == 1 ]]; then
-	echo -en "\033[33mcan't mkdir $OUT_PATH:  \033[0m"
-	if [ -d "$OUT_PATH" ]; then
-	  echo -e "\033[32mfolder exist... skiping....\033[0m"
-	  BACKUP
-	 else
-	 	echo -e "\033[31mpermission denied or other error\033[0m"
-	 	exit
-	fi
-else
-	echo "mkdir out successd"
-fi
-if [ ! -d "$LOACAL_PATH/$PROJECT" ]; then
-
-	if [ -f "$LOACAL_PATH/$PROJECT" ]; then
- 		echo "this shell script is build folder to apk,Are you means: "
- 		echo "(这个脚本是用来将文件夹打包成apk，你的意思是不是打包：  )"
- 		PROJECT_APK=`echo $PROJECT|awk -F . '{print $1}'`
- 		echo -e "\033[36m$PROJECT_APK\033[0m"
- 		echo "(press any key to cancle, input \"y\" confirm)按任意键取消，y确认:  "
- 		read yes
- 		if [[ "$yes" != "y" ]]; then
- 			exit
- 		fi
- 		PROJECT=$PROJECT_APK
- 	else
- 		echo -e "\033[31mNo $PROJECT found! please check your input \033[0m"
- 		exit
-	fi
-else
-	echo -e "\033[32mfind $PROJECT folder,pareing to build ....\033[0m"
-fi
-BUILD
-SIGN
-ZIPALIGN
-DLETED_ORIGIN_FILES
-CLEAN_BUILD
-echo -e "\033[32mDone!\033[0m"
+#-------------流程区---------------------
+set_jar()
+set_signkey()
+time_info=common.get_time_info()
+head_info()
+common.mkdir('out')
+project=sys.argv[1]
+check()
+print 'building '+bcolors.OKBLUE+project+bcolors.ENDC+' .......'
+build_jar_apk()
+sign_apk()
+zipalign_apk()
+delete_orign_files()
+print 'OutPut---->'+bcolors.OKGREEN+os.getcwd()+'/out/'+project_name+'.apk'+bcolors.ENDC

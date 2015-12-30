@@ -1,227 +1,114 @@
-# Android_Shell_Tools
-Some shell script use for handler Android
+Android下的Python脚本工具集
+=============
 
-#安卓脚本命令集
+> 平时下班回家会看看会看看python，看多了就会顺手写一些脚本练练手。后面会将一些有意思的shell脚本，"翻译"成Python脚本，并完成 功能的升级。
 
-从今天开始，我不定时的将自己这三年来写的一些快捷脚本整理优化后公布到这里，他们大多数是一些shell脚本，没有后缀名，但是能够极大的提高你的工作效率。这里面会有你要经常用到的重启命令，反编译命令，挂载命令，解包命令等等，也有你不常用的一键刷机命令，测试OTA命令，图片转换命令，等其它有趣的命令。
-
-让我们看看shell能给我们带来什么。
-
-这个脚本集，大部分是由本人编写，但部分也是其它大神的智慧，所以这个工具集采用MIT协议，请自觉遵守。
-
-                                                        振云      于 2015年6月18日 腾讯
-
-Setup
-------
-
-第一步也是最重要一步，将所有命令全部都初始化完成
-
-		cd ~/bin && chmod 777 Setup && ./Setup
-
-它做了什么?
-
-+ 配置好51-android rulues 解决99%的手机连接问题
-
-+ 替换原系统弱爆了的bashrc,并且每次新开终端会自动导入envsetup这个脚本的变量。以后如果有常用的变量可以在这个里面初始化。
-
-+ 一键给你搭建好linux的源码编译环境
-
-+ 安装 git-cola gitk 等git工具,安装 wget/trimage工具
-
-apk处理工具:d,b,i,f,dump，sign
-------
-
-+ d (decode apk)
-
-输入 d + apk/jar就能轻松将apk或者jar包反编译，例：
-
-		d music.apk
-		或者
-		d android.policy.jar
-
-如果你只输入:
-
-		d music
-
-		工具会自动查找当前目录下会不会存在 music.apk 或者 music.jar
-		并将其反编译
-
-+ b (build apk)
-
-输入 b + 文件夹 就能轻松将一个文件夹回编译成一个apk,输出在 out目录下,当然,加入了智能查找目标的功能<br>
-以及自动使用TOS 的密钥签名和自动对其功能,为了不冲掉前面的回编译结果,还加入了自动备份功能.
-
-		b music
-
-+ dump
-
-输入 dump + apk 就能轻松查看应用的名称,包名,主启动类名
-
-输入 dump -s +apk 还能启动你手机上的这个apk(前提是你的手机安装了这个apk,配合下文中的i脚本,效果杠杆的)
-
-		dump -s music.apk    #打印这个music的名称,包名,主启动类名,并且尝试在你的手机上启动它
-
-+ i
-
-输入 i + apk 就能将这个apk安装到你的手机,并且启动它
-
-		i music.apk  安装并启动music.apk
-
-
-
-+ f
-
-输入 f 加 apk名称就能将框架加载进来，你可以这样
-
-		f framework-res.apk
-		或者：  f framework-res.apk
-		或者   f k-res.a
-
-脚本会自动去查找匹配项
-
-+ sign
-
-sign提供几个选项：<br>
--a:  签名当前目录下所有apk（不包括子文件夹）
-
-        sign -a
-        
--o:　签名单个apk
-
-        sign -o music.apk
-       
--l 签名当前目录下所有文件（包括子文件夹所有文件）
-
-        sign -l
-        
-签名之前的文件会备份到　/tmp/apk_bak下面
-
-adb处理工具:cs.bo,re,reco,p
-======
-
-cs
--------
-
-这不是反恐精英的缩写，是 connect status的缩写，这个脚本是用来检测手机当前状态的函数，
-它有三个返回值：
-
-		2 表示正常模式
-		3 表示recovery模式
-		4 表示fastboot模式
-
-如果你的设备没有连接，它会每隔3秒，尝试获取设备当前状态，直到获取为止。这个脚本将会是后面几个脚本的核心支持
-
-bo , re , reco , p
--------
-
-这三个脚本全部建立在 cs脚本之上，通过cs的返回值，来执行相关的动作
-
-		bo 		在任意界面重启到 bootloader(fastboot)
-		re 		在任意界面重启到 正常系统
-		reco 	在任意界面重启到 recovery
-
-由于 cs 的功劳， 这三个脚本不会在设备没连接，或者没完全连接上的情况下，停止操作。它们会将设备重启到对应的界面后才停止
-
-+ p
-
-将 update.zip 推送到 sdcard/里面去，你只需要这样写：
-
-		p update.zip sdcard/
-
-将 system/etc/apn.conf 抽取到本地，你只需要这样写
-
-		p system/etc/apn.conf .
-
-当连接状态不佳的时候，这个脚本会反复的推送/抽取，直到完成目的。（由于cs的功劳）
-
-+ m
-
-挂载你手机上的 system目录,使你能对system文件夹里面的文件进行增删,支持正常模式和recovery.使用;
-
-		m
-
-+ getPhoneNane
-
-获取手机信息，目前是采用人工完善的方式来获取，根据 getprop获取到的信息来查找相关信息
-
-        getPhoneName	
-		
-Android 综合
-=========
-
-基于上面的快捷命令，你可以轻易整合的写出一些常用的命令：
-
-+ flash_recovery
-
-它的作用是刷人recovery，得益于getPhoneName这个应用，它会从这个脚本获取机型的相关信息，然后获取一些分区信息，将recovery刷入到手机
-
-        flash_recovery recovery.img
-        
-+ test_factory_reset
-
-模拟恢复出厂设置的脚本集
-
-        test_factory_reset
-+ test_ota
-
-一键刷机的脚本 
-
-        test_ota update.zip
-
-GIT相关
+初始化
 -----
 
-push
++ git clone 到`~/bin`目录
++ cd ~/bin
++ ./Setup
 
-将当前commit的内容.推送的当前分支里面去,这个脚本会检查当前分支是什么,然后推送到远程的当前分支里面去
+调试相关
+-----
 
-		push
+`ap`            #`adb pull`和`adb push`的缩写。
 
-gp
++ 支持多文件传输
++ 根据本地文件是否存在来进行push和pull
++ 支持system分区自动挂载
++ 支持data等高权限的pull和push
++ 对于push到 data和system分区的权限默认赋予 777的权限
++ push完成后会自动sync
 
-git push 的简写,目前支持两种模式
+`bo`              #adb reboot bootloader重启到bootloader,支持等待连接
+`re`              #adb reboot 或者fastboot reboot 取决于你处在什么模式下。支持等待连接
+`reco`            #adb reboot recovery 进入recovery模式，支持等待连接
+`i`               #adb install xxx.apk，安装xxx.apk，支持等待连接
+`cs`              #查看连接状态，如果没有连接就会开始计时，直到连接为止
+`ads`             #adb shell      登录到android 设备，支持等待连接
+`m`               #一键mount system分区为可读写状态，支持　正常模式和recovery模式，配合　ap命令调试妥妥的，支持等待连接
+`e:`              #打印手机错误日志（Error）级别
+`extract`         #解压压缩包，支持所有格式
 
-		gp -i  #查看当前修改
-		gp -m "commit message" #一键推送
-		gp -im "commit message" #上面两种相加
-		gp -f #第一次推送,默认信息为 first commit
+刷机相关
+-----
 
-其它工具：
-========
+`fr`
 
-+ change_size
+flash recoveryimage的简写，它的作用就是，刷写recovery，不论你当前处在什么模式下都行，如果你处在正常开机模式，需要root才行，支持等待连接
 
-将图片的尺寸修改为指定尺寸
+`s`
 
-        change_size hello.png
-        
-如果要批量修改，可以直接输入
+adb sideload xxx.zip的简写 直接 s xxx.zip 即可，支持等待连接
 
-        change_size -a
 
-文件夹介绍
-=======
 
-+ Android_test_package/
+git 相关
+-----
 
-里面有三个zip文件,三个刷机包,一个是recovery下的文件管理器,一个是正常刷机包(但是什么都不会改动,只是一个空包),一个错误刷机包
+        push ：     #智能识别当前git分支，然后执行 git push操作
+        gp:         #可用扩展参数 -m : 使用 gp -m "commit message" 快速提交  -f ：使用gp -f 快速创建第一次提交
+        gs：         #git status 的简写
 
-+ apktools
 
-里面有四个版本的apktools, 可以自由切换
+apktool相关
+------
 
-+ icons
+                d xxx.apk               #apktool d xxx.apk，如果存在decode文件夹，会被自动命名为：20151012xxxx ，可用扩展参数 -j 指定 apktool.jar
+                b xxxx                  #apktool b xxx	,增加自动备份功能，增加自动签名，对齐功能。可用扩展参数 -j 同上，-k 指定签名key类型
+                dump xxx.apk            #aapt dump badging xxx.apk,读取本地apk的label，包名，主启动activity名。可用扩展参数 -i 打印信息，-s 在你的手机上启动这个apk
+                sign                    #签名工具，根据后面接的文件进行不同处理，sign + apk: 签名单一apk sign+目录：签名目录下所有的apk，sign+zip包：签名zip包，当然，你可以指定key
 
-ubuntu下醒目的文件夹图标
 
-+ keys
+欲知详情，可用-h参数
 
-一般签名
+其它偏门工具
+----
 
-+ security
+                make_odin               #生成一个samsung odin包　例如： make_odin recovery.img
+                mkboot                  #这是github上面一个开发者写的boot.img和recovery.img解包打包工具，用shell写的，后面有时间会用python重写一遍
+                deodex                  #处理当前目录下的 framework,app,priv-app目录下的odex，支持Android 5.1
+                mountimage              #mount system.img工具，使用： mountimage [system.img]
 
-TOS的dd签名密钥
 
-+ tools
+不是Pyhon脚本，但是很有用，方便的缩写
+-----
 
-一些linux下的Android可执行文件: aapt  adb  dexopt fastboot mkbootimg signapk.jar zipalign
+命令|作用
+----|-----
+ls|使ls命令带着彩色输出
+ll|以彩色的列表方式列出目录里面的全部文件
+grep|类似，只是在grep里输出带上颜色
+mcd|创建一个目录并进入该目录里： mcd [目录名]
+cls|进入一个目录并列出它的的内容：cls[目录名]
+backup|#简单的给文件创建一个备份: backup [文件] 将会在同一个目录下创建 [文件].bak
+md5check|这个函数会计算它并进行比较：md5check[文件][校验值]
+makescript|用你上一个运行的命令创建一个脚本：makescript [脚本名字.sh]
+genpasswd|只是瞬间产生一个强壮的密码
+c|清除你终端屏幕
+histg|快速搜索你的命令输入历史：histg [关键字]
+..|回到上层目录
+...|去上两层目录
+....|去上三层目录
+.....|去上四层目录
+cmount|按列格式化输出mount信息
+sbs|安装文件在磁盘存储的大小排序，显示当前目录的文件列表。
+intercept|接管某个进程的标准输出和标准错误。注意你需要安装了 strace。
+meminfo|查看你还有剩下多少内存。
+alias volume|显示当前音量设置。
+websiteget|下载整个网站：websiteget [URL]。
+listen|显示出哪个应用程序连接到网络。
+port|显示出活动的端口。
+ipinfo|获得你的公网IP地址和主机名。
+getlocation|返回你的当前IP地址的地理位置。
+kernelgraph|绘制内核模块依赖曲线图。需要可以查看图片。
+busy|在那些非技术人员的眼里你看起来是总是那么忙和神秘。
+findout|查找根据文件内容查找匹配项　命令结构为　find　后缀名　匹配内容，如：find java void
+mc|编译recovery用的快捷命令
+sj|切换java环境变量的快捷命令(switchjava)
+bashrc|编辑bashrc快捷键
+rename_suffix|自动重命名函数，支持批处理
+download|下载文件
+repo_sync|自动同步函数

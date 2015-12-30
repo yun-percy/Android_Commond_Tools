@@ -1,270 +1,284 @@
-#!/bin/bash
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-#boot.img tool
-#by xiaolu
-trap "clean" 2 3 4
-workdir=$(pwd)
-toolpath=$(readlink -f $0)
-tooldir=$(dirname $toolpath)
-mkbootimg_dtb=$tooldir/mkbootimg_dtb
-mkbootimg_old=$tooldir/mkbootimg
-old_bootimg=true
-C_OUT="\033[0;1m"
-C_ERR="\033[31;1m"
-C_CLEAR="\033[0;0m"
+#!/usr/bin/python
+#-*- coding:utf-8 -*-
+import os
+import sys
+import argparse
+import commands
+import shutil
+import common
+from common import bcolors
+import ConfigParser
+#-------------参数区---------------------
+op=argparse.ArgumentParser(description='This Sript is used for unpack boot_img')
+op.add_argument('boot_img',nargs="+", type=str,help='请输入一个boot.img或者recovery.img')
+option=op.parse_args()
+boot_img=option.boot_img[0]
+try:
+    target=option.boot_img[1]
+except Exception, e:
+    target=None
+if len(option.boot_img)==3:
+    op.print_help()
+    sys.exit(1)
+boot_img_name=common.get_file_name_only(boot_img)
+cmdline='error'
+kernel_base='0x0'
+kernel_page_size='2048'
+ramdisk_offset='0x0'
+tags_offset='0x0'
+TARGET_CPU_ABI='None'
+TARGET_CPU_ABI2='None'
+cf=ConfigParser.ConfigParser()
+#-------------函数区---------------------
+def check_bootimg(boot_img):
+    global config_ini
+    if '.img' in boot_img:
+        pass
+    else:
+        print "E:/ please input a imagefile!"
+        sys.exit(1)
+    if os.path.isfile(boot_img):
+        pass
+    else:
+        print 'E:/ '+boot_img+" Can't Found!"
+        sys.exit(1)
+    if os.path.isdir(boot_img_name):
+        time=str(common.get_time())
+        os.renames(boot_img_name, time+'_'+boot_img_name)
+    common.mkdir(boot_img_name)
+    config_ini=open(boot_img_name+'/config.ini','w')
+def check_bootdir(boot_dir):
+    if os.path.isfile(out_img):
+        time=str(common.get_time())
+        os.renames(out_img, time+'_'+out_img)
+    cf.read(boot_dir+'/config.ini')
+def unpack_image_to_dir():
+    global cmdline,\
+        kernel_base,\
+        kernel_page_size,\
+        ramdisk_offset,\
+        tags_offset,\
+        boot_img
+    cmd='grep -abo ANDROID! '+boot_img+' | cut -f 1 -d :'
+    (status,kernel_base)=commands.getstatusoutput(cmd)
+    # print 'kernel_base='+kernel_base
+    if status!=0:
+        sys.exit(1)
+    if int(kernel_base)>0:
+        cmd='dd if='+boot_img+' of='+boot_img+' bs='+kernel_base+' skip=1'
+        # print cmd
+        (status,output)=commands.getstatusoutput(cmd)
+        boot_img=boot_img
+        # print status,output
+    cmd="od -A n -D -j 40 -N 4 "+boot_img+" | sed 's/ //g'"
+    (status,dtb_size)=commands.getstatusoutput(cmd)
+    cmd="od -A n -H -j 12 -N 4 "+boot_img+" | sed 's/ //g'"
+    (status,kernel_v)=commands.getstatusoutput(cmd)
+    cmd="od -A n -H -j 20 -N 4 "+boot_img+" | sed 's/ //g'"
+    (status,ramdisk_v)=commands.getstatusoutput(cmd)
+    cmd="od -A n -H -j 28 -N 4 "+boot_img+" | sed 's/ //g'"
+    (status,second_v)=commands.getstatusoutput(cmd)
+    cmd="od -A n -H -j 32 -N 4 "+boot_img+" | sed 's/ //g'"
+    (status,tags_v)=commands.getstatusoutput(cmd)
+    if int(dtb_size)>0:
+        old_bootimg=False
+        kernel_offset=kernel_v
+        ramdisk_offset=ramdisk_v
+        second_offset=second_v
+        tags_offset=tags_v
+    else:
+        old_bootimg=True
+        kernel_addr=kernel_v
+        ramdisk_addr=ramdisk_v
+        second_addr=second_v
+        tags_addr=tags_v
+    cmd="od -A n -D -j 8 -N 4 "+boot_img+" | sed 's/ //g'"
+    (status,kernel_size)=commands.getstatusoutput(cmd)
+    cmd="od -A n -h -j 14 -N 2 "+boot_img+" | sed 's/ //g'"
+    (status,base_addr)=commands.getstatusoutput(cmd)
+    cmd="od -A n -D -j 16 -N 4 "+boot_img+" | sed 's/ //g'"
+    (status,ramdisk_size)=commands.getstatusoutput(cmd)
+    cmd="od -A n -D -j 24 -N 4 "+boot_img+" | sed 's/ //g'"
+    (status,second_size)=commands.getstatusoutput(cmd)
+    cmd="od -A n -D -j 36 -N 4 "+boot_img+" | sed 's/ //g'"
+    (status,page_size)=commands.getstatusoutput(cmd)
+    cmd="od -A n --strings -j 64 -N 512 "+boot_img
+    (status,cmd_line)=commands.getstatusoutput(cmd)
 
-pout() {
-    printf "${C_OUT}${*}${C_CLEAR}\n"
-}
-perr() {
-    printf "${C_ERR}${*}${C_CLEAR}\n"
-}
-clean()
-{
-    rm -rf /tmp/mkboot.*
-    pout "..."
-    exit
-}
+    k_count=(int(kernel_size)+int(page_size)-1)/int(page_size)
+    r_count=(int(ramdisk_size)+int(page_size)-1)/int(page_size)
+    s_count=(int(second_size)+int(page_size)-1)/int(page_size)
+    d_count=(int(dtb_size)+int(page_size)-1)/int(page_size)
+    k_offset=1
+    r_offset=k_offset+k_count
+    s_offset=r_offset+r_count
+    d_offset=s_offset+s_count
+    cmd='dd if='+boot_img+' of=zImage_tmp bs='+page_size+' skip='+str(k_offset)+' count='+str(k_count)
+    # print cmd
+    (status,output)=commands.getstatusoutput(cmd)
+    # print status,output
+    cmd='dd if=zImage_tmp of='+boot_img_name+'/zImage bs='+kernel_size+' count=1'
+    (status,output)=commands.getstatusoutput(cmd)
+    # print status,output
+    cmd='dd if='+boot_img+' of=ramdisk_tmp bs='+page_size+' skip='+str(r_offset)+' count='+str(r_count)
+    (status,output)=commands.getstatusoutput(cmd)
+    # print status,output
+    cmd='dd if=ramdisk_tmp of=ramdisk.gz bs='+ramdisk_size+' count=1'
+    (status,output)=commands.getstatusoutput(cmd)
+    # print status,output
+    if int(dtb_size) >0:
+        cmd='dd if='+boot_img+' of=dt.img_tmp bs='+page_size+' skip='+str(d_offset)+' count='+str(d_count)
+        (status,output)=commands.getstatusoutput(cmd)
+        # print status,output
+        cmd='dd if=dt.img_tmp of='+boot_img_name+'/dt.img bs='+dtb_size+' count=1'
+        (status,output)=commands.getstatusoutput(cmd)
+        # print status,output
+        dt='dt.img'
+    if os.path.isdir(boot_img_name+'/ramdisk'):
+        shutil.rmtree(boot_img_name+'/ramdisk')
+    common.mkdir(boot_img_name+'/ramdisk')
+    os.chdir(boot_img_name+'/ramdisk')
+    cmd='gzip -d -c ../../ramdisk.gz | cpio -i -d -m  --no-absolute-filenames'
+    (status,output)=commands.getstatusoutput(cmd)
+    # print status,output
+    get_cpu_infomation('default.prop')
+    os.chdir('../../')
+    cf.add_section('file')
+    cf.add_section('addr')
+    cf.set('file','kernel','zImage')
+    cf.set('file','ramdisk','ramdisk')
+    cf.set('addr','base','0x'+base_addr)
+    cf.set('addr','cmdline',cmd_line)
+    # print old_bootimg
+    if old_bootimg:
+        print 'page_size='+page_size
+        print 'kernel_size='+kernel_size
+        print 'base_addr='+'0x'+base_addr
+        print 'ramdisk_size='+ramdisk_size
+        print 'second_size='+second_size
+        print 'kernel_addr='+'0x'+kernel_addr
+        print 'ramdisk_addr='+'0x'+ramdisk_addr
+        ramdisk_offset='0x'+ramdisk_addr
+        print 'second_addr='+'0x'+second_addr
+        print 'tags_addr='+'0x'+tags_addr
+        tags_offset='0x'+tags_addr
+        print 'cmd_line='+cmd_line
+        cf.set('addr','ramdiskaddr','0x'+ramdisk_addr)
+    else:
+        print 'page_size='+page_size
+        print 'kernel_size='+kernel_size
+        print 'base_addr='+'0x'+base_addr
+        print 'ramdisk_size='+ramdisk_size
+        print 'dtb_size='+dtb_size
+        print 'second_size='+second_size
+        print 'cmd_line='+cmd_line
+        print 'kernel_offset='+'0x'+kernel_offset
+        print 'ramdisk_offset='+'0x'+ramdisk_offset
+        ramdisk_addr='0x'+ramdisk_offset
+        print 'second_offset='+'0x'+second_offset
+        print 'tags_offset='+'0x'+tags_offset
+        tags_offset='0x'+tags_offset
+        cf.set('file','dt','dt.img')
+        cf.set('addr','ramdiskaddr','0x'+ramdisk_offset)
+        cf.set('addr','tags_offset',tags_offset)
+    cf.write(config_ini)
+    kernel_base='0x'+base_addr
+    cmdline=cmd_line
+    kernel_page_size=page_size
+def pack_boot_dir_to_img():
+    global kernel
+    global base_addr
+    global cmdline
+    global dt
+    # print cf.sections()
+    kernel=cf.get('file', 'kernel')
+    ramdisk_dir=cf.get('file','ramdisk')
+    base_addr=cf.get('addr', 'base')
+    cmdline=cf.get('addr', 'cmdline')
+    ramdisk_addr=cf.get('addr', 'ramdiskaddr')
+    try:
+        dt=cf.get('file', 'dt')
+        old_bootimg=False
+    except Exception, e:
+        dt=None
+        old_bootimg=True
+    try:
+        tags_offset=cf.get('addr', 'tags_offset')
+    except Exception, e:
+        tags_offset=''
+    if os.path.isdir(boot_dir+'/'+ramdisk_dir):
+        os.chdir(boot_dir+'/'+ramdisk_dir)
+        if os.path.isfile('../new_ramdisk.gz'):
+            os.remove('../new_ramdisk.gz')
+        command='find . | cpio -R 0:0 -H newc -o 2>/dev/null | gzip > ../new_ramdisk.gz'
+        os.system(command)
+        os.chdir('../../')
+    else:
+        print 'Can\'t find '+boot_dir+'/ramdisk!'
+        sys.exit(1)
+    os.chdir(boot_dir)
+    print "=================================="
+    print "kernel = zImage"
+    print "ramdisk = ramdisk"
+    print "base = ",base_addr
+    print "cmdline = ",cmdline
+    if old_bootimg:
+        print "ramdiskaddr = ",ramdisk_addr
+        cmd='mkbootimg --kernel '+kernel+' --ramdisk new_ramdisk.gz --base '+base_addr+' --ramdiskaddr '+ramdisk_addr+' --cmdline "'+cmdline+'" -o ../'+out_img
+        # print cmd
+        (status,output)=commands.getstatusoutput(cmd)
 
-usage()
-{
-    pout "<Unpack and repack boot.img tool>\n"
-    pout "Not enough parameters or parameter error!"
-    pout "unpack boot.img & decompress ramdisk：\n    $(basename $0) [img] [output dir]"
-    pout "    $(basename $0) boot.img boot20130905"
-    pout "Use the unpacked directory repack boot.img(img_info)：\n    $(basename $0) [unpacked dir] [newbootfile]"
-    pout "    $(basename $0) boot20130905 newboot.img"
-    pout "Use the boot.img and new ramdisk repack boot.img：\n    $(basename $0) [img] [ramdisk.gz or ramdisk dir] [newbootfile]"
-    pout "    $(basename $0) boot.img boot20130905/ramdisk newboot.img"
-    clean
-}
+        # print output
+    else:
+        print "dt = dt.img"
+        print "ramdisk_offset = ",ramdisk_addr
+        print "tags_offset = ",tags_offset
+        cmd='mkbootimg_dtb --kernel '+kernel+' --ramdisk new_ramdisk.gz --base '+base_addr+' --ramdisk_offset '+ramdisk_addr+' --tags_offset '+tags_offset+' --dt '+dt+' --cmdline "'+cmdline+'" -o ../'+out_img
+        # print cmd
+        (status,output)=commands.getstatusoutput(cmd)
+        # print output
+    print "=================================="
+    if len(output)==0:
+        print "make "+bcolors.LIGHT_BLUE+out_img+bcolors.OKGREEN+" Done!"+bcolors.ENDC
+    # print kernel,dt,base_addr,cmdline
+def clean_workspace():
+    # shutil.rmtree('ramdisk')
+    os.remove('ramdisk.gz')
+    os.remove('ramdisk_tmp')
+    os.remove('zImage_tmp')
+    if os.path.isfile('dt.img_tmp'):
+        os.remove('dt.img_tmp')
+def get_cpu_infomation(file):
+    global TARGET_CPU_ABI,TARGET_CPU_ABI2
+    # print os.getcwd()
+    build_prop=open(file,'r')
+    # line=build_prop.readline()
+    import time
+    for line in build_prop.readlines():
+        # time.sleep(1)
+        # print line
+        if 'cpu.abi=' in line:
+            TARGET_CPU_ABI=line.split('=')[-1].strip()
+            print 'TARGET_CPU_ABI='+TARGET_CPU_ABI
+        if 'cpu.abi2' in line:
+            TARGET_CPU_ABI2=line.split('=')[-1].strip()
+            print 'TARGET_CPU_ABI2='+TARGET_CPU_ABI2
+#-------------流程区---------------------
+if os.path.isfile(boot_img):
+    if target:
+        boot_img_name=target
+    check_bootimg(boot_img)
+    unpack_image_to_dir()
+    clean_workspace()
+elif os.path.isdir(boot_img):
+    boot_dir=boot_img
+    if target:
+        out_img=target
+    else:
+        out_img=boot_dir+'.img'
+    check_bootdir(boot_dir)
+    pack_boot_dir_to_img()
+else:
+    op.print_help()
 
-print_info()
-{
-    pout "  kernel         : $kernel"
-    pout "  ramdisk        : $ramdisk"
-    pout "  page size      : $page_size"
-    pout "  kernel size    : $kernel_size"
-    pout "  ramdisk size   : $ramdisk_size"
-    [ ! -z $second_size ] && [ $second_size -gt 0 ] && \
-        pout "  second_size    : $second_size"
-    if $old_bootimg ; then
-        pout "  base           : $base_addr"
-        pout "  kernel addr    : $kernel_addr"
-        pout "  ramdisk addr   : $ramdisk_addr"
-        [ -z $second_addr ] || pout "  second_addr    : $second_addr"
-        pout "  tags addr      : $tags_addr"
-    else
-        pout "  dtb size       : $dtb_size"
-        pout "  base           : $base_addr"
-        pout "  kernel offset  : $kernel_offset"
-        pout "  ramdisk offset : $ramdisk_offset"
-        [ -z $second_offset ] || pout "  second_offset  : $second_offset"
-        pout "  tags offset    : $tags_offset"
-        pout "  dtb img        : $dt"
-    fi
-    pout "  cmd line       : $cmd_line"
-}
-
-mkboot_img()
-{
-    error=0
-    if $old_bootimg ; then
-        $mkbootimg_old --kernel $kernel --ramdisk $ramdisk \
-                --base $base_addr --ramdiskaddr $ramdisk_addr \
-                --cmdline "$cmd_line" -o $1 || error=1
-    else
-        $mkbootimg_dtb --kernel $kernel --ramdisk $ramdisk \
-                    --base $base_addr --ramdisk_offset $ramdisk_offset \
-                    --tags_offset $tags_offset --cmdline "$cmd_line" \
-                    --dt $dt -o $1 || error=1
-    fi
-    [ $error -eq 1 ] && return $error
-    ramdisk_size=$(stat -c "%s" $ramdisk)
-    boot_size=$(stat -c "%s" $1)
-    pout "Kernel size: $kernel_size, new ramdisk size: $ramdisk_size, $(basename $1): $boot_size."
-    pout "$(basename $1) has been created."
-}
-
-#decide action
-[ $# -lt 2 ] || [ $# -gt 3 ] && usage
-if [ $# -eq 2 ] && [ -d $1 ]; then
-    mkboot_from_dir=1
-elif [ $# -eq 2 ] && [ -s $1 ]; then
-    split_boot_to_dir=1
-elif [ $# -eq 3 ] && [ -s $1 ] && [ -e $2 ]; then
-    mkboot_from_img_dir=1
-else
-    usage
-fi
-
-#mkboot_from_dir, img_info
-if [ ! -z $mkboot_from_dir ]; then
-    pout "mkbootimg from $1/img_info."
-    unpacked_dir=$(readlink -f $1)
-    new_img=$(readlink -f $2)
-    cd $unpacked_dir
-    if [ ! -s img_info ]; then
-        pout "not found img_info file! can't rebuild img."
-        clean
-    fi 
-    eval $(cat img_info)
-    if [ -z $kernel ] || [ -z $ramdisk ] || [ -z $base_addr ]; then
-        pout "img_info file have not enough parameters."
-        clean
-    fi
-    if [ ! -z $dt ]; then
-        old_bootimg=false
-        [ -z $kernel_offset ] && kernel_offset=$kernel_addr
-        [ -z $ramdisk_offset ] && ramdisk_offset=$ramdisk_addr
-        [ -z $tags_offset ] && tags_offset=$tags_addr
-    fi
-    kernel=$(readlink -f $kernel)
-    if [ -d $ramdisk ]; then
-        cd $ramdisk
-        find . | cpio -R 0:0 -H newc -o 2>/dev/null | gzip > $unpacked_dir/new_ramdisk.gz
-        #find . | cpio -R 0:0 -H newc -o 2>/dev/null > $unpacked_dir/new_ramdisk.gz
-        #mkbootfs $ramdisk > $unpacked_dir/new_ramdisk.gz
-        ramdisk=$unpacked_dir/new_ramdisk.gz
-        ramdisk_size=$(stat -c "%s" $ramdisk)
-    fi
-    cd $unpacked_dir
-    print_info
-    rm -f $new_img
-    mkboot_img $new_img || perr "Make boot.img Error! pls check img_info file."
-    rm -f new_ramdisk.gz
-    clean
-fi
-
-if [ ! -z $split_boot_to_dir ]; then
-    #split boot.img to dir.
-    if [ -e $2 ]; then
-        read -p "$2 exists, delete?(N/y)" reply
-        case $reply in
-            y | Y)
-            rm -rf $2
-            ;;
-        *)
-            exit
-            ;;
-        esac
-    fi
-    tempdir="$(readlink -f $2)"
-    mkdir -p $tempdir
-    pout "Unpack & decompress $1 to $2"
-else
-    #split boot.img to tmp dir.
-    tempdir=$(mktemp -d /tmp/mkboot.XXXX)
-    pout "Repack $1 & ramdisk $2 to $3"
-fi
-
-#get boot.img info
-cp -f $1 $tempdir/
-cd $tempdir
-bootimg=$(basename $1)
-offset=$(grep -abo ANDROID! $bootimg | cut -f 1 -d :)
-[ -z $offset ] && clean
-if [ $offset -gt 0 ]; then
-        dd if=$bootimg of=bootimg bs=$offset skip=1 2>/dev/null
-        bootimg=bootimg
-fi
-
-dtb_size=$(od -A n -D -j 40 -N 4 $bootimg | sed 's/ //g')
-kernel_v=0x$(od -A n -H -j 12 -N 4 $bootimg | sed 's/ //g')
-ramdisk_v=0x$(od -A n -H -j 20 -N 4 $bootimg | sed 's/ //g')
-second_v=0x$(od -A n -H -j 28 -N 4 $bootimg | sed 's/ //g')
-tags_v=0x$(od -A n -H -j 32 -N 4 $bootimg | sed 's/ //g')
-if [ $dtb_size -gt 0 ]; then
-    old_bootimg=false
-    kernel_offset=$kernel_v
-    ramdisk_offset=$ramdisk_v
-    second_offset=$second_v
-    tags_offset=$tags_v
-else
-    kernel_addr=$kernel_v
-    ramdisk_addr=$ramdisk_v
-    second_addr=$second_v
-    tags_addr=$tags_v
-fi
-kernel_size=$(od -A n -D -j 8 -N 4 $bootimg | sed 's/ //g')
-base_addr=0x$(od -A n -h -j 14 -N 2 $bootimg | sed 's/ //g')0000
-ramdisk_size=$(od -A n -D -j 16 -N 4 $bootimg | sed 's/ //g')
-second_size=$(od -A n -D -j 24 -N 4 $bootimg | sed 's/ //g')
-page_size=$(od -A n -D -j 36 -N 4 $bootimg | sed 's/ //g')
-cmd_line=$(od -A n --strings -j 64 -N 512 $bootimg)
-
-k_count=$(((kernel_size+page_size-1)/page_size))
-r_count=$(((ramdisk_size+page_size-1)/page_size))
-s_count=$(((second_size+page_size-1)/page_size))
-d_count=$(((dtb_size+page_size-1)/page_size))
-k_offset=1
-r_offset=$((k_offset+k_count))
-s_offset=$((r_offset+r_count))
-d_offset=$((s_offset+s_count))
-
-dd if=$bootimg of=zImage_tmp bs=$page_size skip=$k_offset count=$k_count 2>/dev/null
-dd if=zImage_tmp of=zImage bs=$kernel_size count=1    2>/dev/null
-if [ ! -z $split_boot_to_dir ]; then
-    dd if=$bootimg of=ramdisk_tmp bs=$page_size skip=$r_offset count=$r_count 2>/dev/null
-    dd if=ramdisk_tmp of=ramdisk.gz bs=$ramdisk_size count=1    2>/dev/null
-fi
-if [ $dtb_size -gt 0 ]; then
-    dd if=$bootimg of=dt.img_tmp bs=$page_size skip=$d_offset count=$d_count 2>/dev/null
-    dd if=dt.img_tmp of=dt.img bs=$dtb_size count=1    2>/dev/null
-    dt="$tempdir/dt.img"
-fi
-rm -f *_tmp $(basename $1) $bootimg
-
-kernel="$tempdir/zImage"
-ramdisk=$tempdir/ramdisk.gz
-[ ! -s $kernel ] && clean
-#print boot.img info
-print_info
-
-#write info to img_info,decompression ramdisk.gz
-if [ ! -z $split_boot_to_dir ]; then
-    if $old_bootimg ; then
-        printf "kernel=$(basename $kernel)\nramdisk=ramdisk\npage_size=$page_size\n\
-kernel_size=$kernel_size\nramdisk_size=$ramdisk_size\nbase_addr=$base_addr\nkernel_addr=$kernel_addr\n\
-ramdisk_addr=$ramdisk_addr\ntags_addr=$tags_addr\ncmd_line=\"$cmd_line\"\n" > img_info
-    else
-        dt=$(basename $dt)
-        printf "kernel=$(basename $kernel)\nramdisk=ramdisk\ndt=$dt\npage_size=$page_size\n\
-kernel_size=$kernel_size\nramdisk_size=$ramdisk_size\ndtb_size=$dtb_size\nbase_addr=$base_addr\nkernel_offset=$kernel_offset\n\
-ramdisk_offset=$ramdisk_offset\ntags_offset=$tags_offset\ncmd_line=\"$cmd_line\"\n" > img_info
-    fi
-    mkdir ramdisk
-    cd ramdisk
-    gzip -d -c ../ramdisk.gz | cpio -i -d -m  --no-absolute-filenames 2>/dev/null
-    #Unpack Finish to exit.
-    pout "Unpack completed."
-    exit
-fi
-
-#继续
-cd $workdir
-ramdisk=$2
-#if ramdisk is a directory,create ramdisk.gz
-if [ -d $ramdisk ]; then
-    cd $ramdisk
-    find . | cpio -R 0:0 -H newc -o 2>/dev/null | gzip > $tempdir/ramdisk.gz
-    ramdisksize=$(stat -c "%s" $tempdir/ramdisk.gz)
-    ramdisk="$tempdir/ramdisk.gz"
-    cd $workdir
-fi
-rm -f $3
-mkboot_img $3 || perr "Make boot.img Error! pls check."
-clean
 

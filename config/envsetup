@@ -1,0 +1,22 @@
+#!/bin/bash
+#此脚本初始化变量
+#制作者：振云
+
+#变量区
+
+export APKTOOL_PATH=~/bin/apktools
+export ENV_PATH=~/bin
+export TOOL_PATH=~/bin/tools
+export ANDROID_PACKAGES_PATH=~/bin/Android_test_packages
+export DATE=`date "+%Y-%m-%d-%H_%M_%S" `
+export DATE_INFO=`date "+%Y年%m月%d日%H时%M分 周%w" `
+
+export TOOLS_PATH=$ENV_PATH/tools
+export SIGNAPKJAR=$TOOLS_PATH/signapk.jar
+#KEY="testkey"
+export KEY="platform"
+export KEY_PATH=$ENV_PATH/security
+export KEY_PEM=$KEY_PATH/$KEY.x509.pem
+export KEY_PK8=$KEY_PATH/$KEY.pk8
+export PATH=$PATH:$TOOL_PATH:$APKTOOL_PATH:$ANDROID_PACKAGES_PATH
+export APKTOOLS_JAR=apktool_2.0.0.jar

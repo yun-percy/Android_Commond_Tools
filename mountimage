@@ -1,0 +1,38 @@
+#!/usr/bin/python
+#-*- coding:utf-8 -*-
+#此脚本使用在Android 各项处理上
+#制作者：振云
+import commands
+import argparse
+import common
+import os
+from common import bcolors
+#-------------参数区---------------------
+op=argparse.ArgumentParser(description="mount a ext4 type system img in system")
+op.add_argument('file',type=str,help="input a systemfile")
+options=op.parse_args()
+#-------------函数区---------------------
+#-------------流程区---------------------
+cmd="file "+options.file
+(status,output)=commands.getstatusoutput(cmd)
+if "ext4 filesystem" in output:
+    pass
+else:
+    print "file type error!"
+    sys.exit(1)
+foldername=common.get_file_name_only(options.file)
+if os.path.isdir(foldername):
+    foldername=foldername+"_dir"
+common.mkdir(foldername)
+cmd="sudo mount -t ext4 -o loop "+options.file+" "+foldername
+(status,output)=commands.getstatusoutput(cmd)
+if not os.listdir(foldername):
+    print "mount error"
+    print output
+else:
+    print "mount "+options.file+bcolors.OKGREEN+" Done!"+bcolors.ENDC
+
+# if :
+#     pass
+# mkdir tmp
+# sudo mount -t ext4 -o loop system.img.ext4 tmp
