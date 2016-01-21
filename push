@@ -17,11 +17,30 @@ def get_branch():
 		print output
 		sys.exit(1)
 	return output
+def get_branch_remote():
+    cmd="git status"
+    (status,output)=commands.getstatusoutput(cmd)
+    str=output.split('\n')
+    # print str
+    # print len(str)
+    for line in str:
+        if "Your branch" in line:
+            # print line
+            branch_info=line.split("'")[1]
+            remote=branch_info.split('/')[0]
+            branch=branch_info.split('/')[1]
+            # print remote,branch
+            return remote,branch
+    print "get branch error ...."
+    print output
+    sys.exit(1)
 
 #-------------流程区---------------------
-branch=get_branch()
-print 'push to the remote origin '+bcolors.OKBLUE,branch,bcolors.ENDC
-cmd='git push -u origin '+branch
-# print cmd
+# get_branch_remote()
+# sys.exit(0)
+remote,branch=get_branch_remote()
+print 'push to the remote '+bcolors.OKGREEN+remote+' '+bcolors.OKBLUE,branch,bcolors.ENDC
+cmd='git push -u '+remote+' '+branch
+print cmd
 output=commands.getoutput(cmd)
 print output

@@ -6,6 +6,7 @@ import commands
 import argparse
 import common
 import os
+import sys
 from common import bcolors
 #-------------参数区---------------------
 op=argparse.ArgumentParser(description="mount a ext4 type system img in system")

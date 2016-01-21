@@ -238,6 +238,10 @@ gs(){
     # 不是勇士队的缩写！ git status
     git status
 }
+gd(){
+    #  git diff
+    git diff
+}
 last_log(){
     cs
     status=$?

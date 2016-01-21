@@ -48,9 +48,10 @@ adb sideload xxx.zip的简写 直接 s xxx.zip 即可，支持等待连接
 git 相关
 -----
 
-        push ：     #智能识别当前git分支，然后执行 git push操作
+        push ：     #智能识别当前git分支，然后执行 git push操作,（20160121新增，自动识别当前仓库名，以前默认为origin）
         gp:         #可用扩展参数 -m : 使用 gp -m "commit message" 快速提交  -f ：使用gp -f 快速创建第一次提交
         gs：         #git status 的简写
+        gd:          #git diff简写
 
 
 apktool相关
@@ -71,6 +72,8 @@ apktool相关
                 mkboot                  #这是github上面一个开发者写的boot.img和recovery.img解包打包工具，用shell写的，后面有时间会用python重写一遍
                 deodex                  #处理当前目录下的 framework,app,priv-app目录下的odex，支持Android 5.1
                 mountimage              #mount system.img工具，使用： mountimage [system.img]
+                pc                      #print cert 简写，打印证书信息，支持直接打印 x509.pem/*.rsa/apk的证书信息
+                login_serve             #登录到服务器，将服务器端口，服务器名称，地址保存到 ~/.serve中，即可登录到相关服务器。配合[免密码登录SSH远程服务器](http://percychen.com/linux/2014/12/09/linuxsshnocode.html)效果更佳
 
 
 不是Pyhon脚本，但是很有用，方便的缩写
