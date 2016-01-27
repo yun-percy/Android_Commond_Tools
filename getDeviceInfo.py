@@ -31,11 +31,16 @@ def Get_System_Block(su):
     return output.strip()
 def GetRecoveryBlock():
     root_status=Is_Device_Root()
-    (status,output)=commands.getstatusoutput('adb shell '+su[root_status]+' \"ls /dev/block/platform/*/by-name/recovery\"')
+    cmd='adb shell '+su[root_status]+' \"ls /dev/block/platform/*/by-name/recovery --color=never\"'
+    print cmd
+    (status,output)=commands.getstatusoutput(cmd)
     if "No such file or directory" in output:
-        (status,output)=commands.getstatusoutput('adb shell '+su[root_status]+' \"ls /dev/block/platform/*/by-name/RECOVERY\"')
+        (status,output)=commands.getstatusoutput('adb shell '+su[root_status]+' \"ls /dev/block/platform/*/by-name/RECOVERY --color=never\"')
         if "No such file or directory" in output:
-            (status,output)=commands.getstatusoutput('adb shell '+su[root_status]+' \"ls /dev/block/platform/*/by-name/SOS\"')
+            (status,output)=commands.getstatusoutput('adb shell '+su[root_status]+' \"ls /dev/block/platform/*/by-name/SOS --color=never\"')
+            if "No such file or directory" in output:
+                print "Can't get recovery block!"
+                sys.exit(1)
     # print status,output
     return output.strip()
 def Mount_System_Block():

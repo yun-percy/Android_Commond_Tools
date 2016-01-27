@@ -5,7 +5,6 @@
 import os
 import sys
 import commands
-from common import bcolors
 import argparse
 import shutil
 #-------------参数区---------------------
@@ -16,14 +15,11 @@ op.add_argument('file',type=str,help="输入apk,rsa,x509文件路径")
 options=op.parse_args()
 #-------------函数区---------------------
 def print_apk_cert():
-     shutil.rmtree('/tmp/META-INF')
-     cmd='unzip -d /tmp/ '+TARGET+' "META-INF/*.RSA"'
-     # print cmd
-     (status,output)=commands.getstatusoutput(cmd)
-     # print output
-     # output_mesg=output.split('\n')
-     # print output_mesg
-     print_cert_info(apk_rsa_path)
+    if os.path.isdir('/tmp/META-INF'):
+        shutil.rmtree('/tmp/META-INF')
+    cmd='unzip -d /tmp/ '+TARGET+' "META-INF/*.RSA"'
+    (status,output)=commands.getstatusoutput(cmd)
+    print_cert_info(apk_rsa_path)
 def print_cert_info(cert):
     cmd='keytool -printcert -file '+cert
     # print cmd

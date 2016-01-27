@@ -18,7 +18,7 @@ LOCAL_PATH=sys.path[0]
 su=['','su -c']
 #-----------函数区-------------------
 def really_push(local_target,phone_target,show_print):
-    cmd="adb push "+local_target+" "+phone_target
+    cmd="adb push "+local_target+" "+phone_target+'/'
     print cmd
     (status,output)=commands.getstatusoutput(cmd)
     print status,output
