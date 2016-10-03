@@ -37,30 +37,6 @@ def mkdir(path):
         # 如果目录存在则不创建，并提示目录已存在
         # print '目录 '+path+' 已存在'
         return False
-def read_apktool_jar():
-	import ConfigParser
-	import os
-	cp=ConfigParser.ConfigParser()
-	home_path=os.environ['HOME']
-	# print home_path
-	cp.read(home_path+"/bin/config/env.conf")
-	return cp.get('apktools', 'apktool_jar')
-def read_signapk_jar():
-	import ConfigParser
-	import os
-	cp=ConfigParser.ConfigParser()
-	home_path=os.environ['HOME']
-	# print home_path
-	cp.read(home_path+"/bin/config/env.conf")
-	return cp.get('apktools', 'signapk_jar')
-def read_key_path():
-	import ConfigParser
-	import os
-	cp=ConfigParser.ConfigParser()
-	home_path=os.environ['HOME']
-	# print home_path
-	cp.read(home_path+"/bin/config/env.conf")
-	return cp.get('folder', 'key_path')
 def get_time():
 	import time
 	system_time=time.time()
@@ -86,14 +62,6 @@ def get_file_name_only(file):
 	suffix=os.path.splitext(file)[1]
 	file_name=file.strip(suffix).split('/')[-1]
 	return file_name
-def set_apktool_jar(version):
-	apktool_jar='apktool'+version+'.jar'
-	jar_file=open('/tmp/apktool_jar','w')
-	jar_file.truncate()
-	jar_file.write(apktool_jar)
-	jar_file.close()
-def set_sign_key(key_type):
-	key=''
 def check_file_exist(file,exit):
     import os
     import sys

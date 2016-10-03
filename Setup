@@ -9,32 +9,18 @@ if [[ $1 == "-x" ]]; then
 fi
 
 #函数区
-CP_51_ANDROD(){
-	if [[ -f "/etc/udev/rules.d/51-android.rules" ]]; then
-		echo -n "the Android rules "
-		echo -ne "\033[32m51-android.rules\033[0m"
-		echo " has exist"
-		echo -ne "\033[33mSkipping \033[0m"
-		echo "copy 51-android.rules...."
-	else
-		sudo cp $HOME/bin/config/51-android.rules /etc/udev/rules.d/
-	fi
-}
+
 LINK_BASHRC(){
 	# rm -rf $HOME/.vim/
 	# ln -s $HOME/bin/vim $HOME/.vim
-	rm $HOME/.bashrc
-	rm $HOME/.vimrc
-	rm $HOME/.git-completion.bash
-	ln -s $HOME/bin/config/bashrc  $HOME/.bashrc
+	rm $HOME/.bash_profile
+    rm $HOME/.vimrc
+    rm -r $HOME/.vim
+	ln -s $HOME/bin/config/bashrc  $HOME/.bash_profile
 	ln -s $HOME/bin/config/vimrc $HOME/.vimrc
-	ln -s $HOME/bin/config/git-completion.bash $HOME/.git-completion.bash
-	rm ~/.gconf/apps/gnome-terminal/profiles/Default/%gconf.xml
-	ln -s $HOME/bin/config/bash_%gconf.xml $HOME/.gconf/apps/gnome-terminal/profiles/Default/%gconf.xml
+    ln -s $HOME/bin/config/vim $HOME/.vim
 }
-INSTALL_SOFTWARE(){
-	sudo apt-get install bison build-essential curl flex git gnupg gperf libesd0-dev libncurses5-dev libsdl1.2-dev libwxgtk2.8-dev libxml2 libxml2-utils lzop openjdk-6-jdk openjdk-6-jre pngcrush schedtool squashfs-tools xsltproc zip zlib1g-dev g++-multilib gcc-multilib lib32ncurses5-dev lib32readline-gplv2-dev lib32z1-dev git-cola gitk wget trimage openjdk-7-jdk vim vim-doc guake tree gnuplot-qt exuberant-ctags cscope subversion imagemagick exiftool expect python3-markdown python3-docutils vim-youcompleteme libswitch-perl
-}
+
 SVN_DIFF(){
 	if [ ! -f "/usr/bin/bcdiff.sh" ]; then
 		sudo ln -s $HOME/bin/config/bcdiff.sh /usr/bin/bcdiff.sh
@@ -43,27 +29,13 @@ SVN_DIFF(){
 	fi
 }
 #流程区
-CP_51_ANDROD
 LINK_BASHRC
-INSTALL_SOFTWARE
 SVN_DIFF
-chmod 777 ~/bin -R
+chmod 777 ~/bin
 if [[ ! -f "$HOME/.git-credentials" ]]; then
     touch $HOME/.git-credentials
+    git config --global credential.helper store
     echo "please fill your github/git.code username & password in ~/.git-credentials"
     echo -e "eg:\n\t https://username:password@github.com"
 fi
 echo -e "\033[32mDone!\033[0m"
-
-
-#函数区
-
-# INSTALL_SUBLIME(){
-# 	cd sublime_text_3
-# 	sudo ./firstrun.sh
-# 	cd -
-# }
-
-#流程区
-
-# INSTALL_SUBLIME
