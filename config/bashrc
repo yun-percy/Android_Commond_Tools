@@ -1,14 +1,19 @@
 #这些别名真的很简单并且真的很短，但他们大多数是为了给你的生命节省几秒钟，最终也许为你这一辈子节省出来几年，也许呢。
 
 #环境变量设置
+export ANT_HOME=/usr/bin/apache-ant-1.9.7
+export PATH=${PATH}:${ANT_HOME}/bin
 export PATH=$PATH:~/bin
+export NO_PROXY=git.code.oa.com,api.tapd.oa.com,maven.oa.com,api.rdm.wsd.com,download.ext.wsd.com,test.api.tof.oa.com,npm.oa.com,*.wsd.com,*.oa.com,api.weixin.oa.com
 . ~/bin/config/envsetup #初始化工具集
 unset _JAVA_OPTIONS
+PATH=/usr/local/opt/coreutils/libexec/gnubin:$PATH
+MANPATH="/usr/local/opt/coreutils/libexec/gnuman:$MANPATH"
 
-alias ls="ls -G -F -h"
+alias ls="ls --color=auto  -F -h"
 #简单但非常重要。使ls命令带着彩色输出。
 
-alias ll="ls -G -al"
+alias ll="ls --color=auto -al"
 #以彩色的列表方式列出目录里面的全部文件。
 
 alias grep='grep --color=auto'
@@ -134,12 +139,15 @@ mc(){
     make recoveryimage -j16
     #编译recovery用的快捷命令
 }
+mq(){
+    make qrom_otapackage -j32
+    #编译qrom zip包快捷命令
+}
 sj(){
     #切换java环境变量的快捷命令(switchjava)
     sudo update-alternatives --config java
     sudo update-alternatives --config javac
 }
-
 #编辑bashrc快捷键
 bashrc(){
     cd ~
@@ -155,7 +163,7 @@ set completion-ignore-case on
 set visible-stats on
 #ruby的一些优化
 export RUBYOPT="-U -Ku -E utf-8:utf-8"
-alias subl="sublime_text_3_fcitx"
+alias subl="/Applications/Sublime\ Text.app/Contents/SharedSupport/bin/subl"
 rename_suffix(){
     # 自动重命名函数，支持批处理
     read -p "请输入新的后缀名，例如：bak   ：" suffix
@@ -194,7 +202,7 @@ ads(){
 }
 gs(){
     # 不是勇士队的缩写！ git status
-    git status
+    ~/bin/gs
 }
 gd(){
     #  git diff
@@ -213,5 +221,19 @@ last_log.1(){
     [ $status == 2 ]&& adb shell su -c "cat cache/recovery/last_log.1"
     [ $status == 3 ]&& adb shell "cat cache/recovery/last_log.1"
 }
+export USE_CCACHE=1
 #重定义提示符
+delete_Trash(){
+    echo -S "yunsun" | sudo rm -rf ~/.local/share/Trash
+}
+alias dstat='dstat -cdlmnpsy'
+alias slurm='slurm -i en1'
+alias kb='~/Desktop/kill_bash.sh'
+export http_proxy=http://dev-proxy.oa.com:8080
+
+export https_proxy=http://dev-proxy.oa.com:8080
+export GRADE_HOME=/data2/gradle-2.14.1/;
+export ANT_HOME=/data2/android-ndk-r13
+export PATH=$PATH:$GRADE_HOME/bin:$ANT_HOME
 . ~/bin/config/bash_aliases
+

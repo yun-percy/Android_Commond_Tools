@@ -1,0 +1,142 @@
+#!/usr/bin/python
+#-*- coding:utf-8 -*-
+#此脚本使用在Android 各项处理上
+#制作者：振云
+import sys
+import os
+import commands
+import getDeviceInfo
+import GetDeviceStatus
+from common import bcolors
+import common
+import argparse
+#-------------参数区---------------------
+op=argparse.ArgumentParser(description="adb push or adb pull file  script")
+op.add_argument('file',type=str,nargs='*', help='if you input phone\'s file first,script will pull it down \nif you inout locat file first,script will push it to phone')
+option=op.parse_args()
+LOCAL_PATH=sys.path[0]
+su=['','su -c']
+#-----------函数区-------------------
+def really_push(local_target,phone_target,show_print):
+    cmd="adb push "+local_target+" "+phone_target+'/'
+    print cmd
+    (status,output)=commands.getstatusoutput(cmd)
+    print status,output
+    if status == 0 or 'bytes in' in output:
+        print output
+        print "transfer"+bcolors.OKBLUE,local_target,bcolors.ENDC+"has "+bcolors.OKGREEN+"Done!"+bcolors.ENDC
+            #print status,output
+    else:
+        print "transfer"+bcolors.OKBLUE,local_target,bcolors.ENDC+"has "+bcolors.FAIL+"FAILED!"+bcolors.ENDC
+        print output
+        sys.exit(1)
+def really_pull(phone_target,local_target,show_print):
+    print "try to pull"+bcolors.OKGREEN,phone_target,bcolors.ENDC+"to"+bcolors.OKBLUE,local_target+bcolors.ENDC
+    cmd="adb pull "+phone_target+" "+local_target
+    print cmd
+    (status,output)=commands.getstatusoutput(cmd)
+    print output
+    if "bytes in" in output:
+        print status,output
+        print "transfer"+bcolors.OKBLUE,phone_target,bcolors.ENDC+"has "+bcolors.OKGREEN+"Done!"+bcolors.ENDC
+    else:
+        if "Permission denied" in output:
+            pull_file_with_root(phone_target,local_target)
+        else:
+            print "transfer"+bcolors.OKBLUE,phone_target,bcolors.ENDC+"has "+bcolors.FAIL+"FAILED!"+bcolors.ENDC
+            print output
+def set_permission(local_target,phone_target):
+    local_target_name=common.get_file_name_only(local_target)
+    cmd='adb shell '+su[root_device]+' "chmod 777 '+phone_target+'/'+local_target+'"'
+    print cmd
+    (status,output)=commands.getstatusoutput(cmd)
+    cmd='adb shell '+su[root_device]+' "chown system:system '+phone_target+'/'+local_target+'"'
+    print cmd
+    (status,output)=commands.getstatusoutput(cmd)
+def push_to_phone(local_target,phone_target,show_print):
+    global root_device
+    if show_print:
+        print "try to push",local_target,"to",phone_target
+    if phone_target.split("/")[0]=="system":
+        getDeviceInfo.Mount_System_Block()
+        root_device=getDeviceInfo.Is_Device_Root()
+        print option.file[:-1]
+        for local_target_number in option.file[:-1]:
+            print local_target_number
+            if su[root_device]=='':
+                really_push(local_target_number,phone_target,show_print)
+            else:
+                push_file_with_root(local_target_number, phone_target)
+            set_permission(local_target_number,phone_target)
+    elif phone_target.split("/")[0]=="data" or phone_target.split("/")[0]=="cache":
+        root_device=getDeviceInfo.Is_Device_Root()
+        for local_target_number in option.file[:-1]:
+            push_file_with_root(local_target_number, phone_target)
+            set_permission(local_target_number,phone_target)
+    else :
+        for local_target_number in option.file[:-1]:
+            print local_target_number
+            really_push(local_target_number,phone_target,show_print)
+    cmd='adb shell sync'
+    print cmd
+    (status,output)=commands.getstatusoutput(cmd)
+
+def pull_file_from_phone(phone_target,local_target,show_print):
+    print phone_target,local_target
+    for phone_target in option.file[:-1]:
+        if show_print:
+            print "try to pull"+bcolors.OKGREEN,phone_target,bcolors.ENDC+"to"+bcolors.OKBLUE,local_target+bcolors.ENDC
+        cmd="adb pull "+phone_target+" "+local_target
+        print cmd
+        (status,output)=commands.getstatusoutput(cmd)
+        print output
+        if "bytes in" in output:
+            print status,output
+            print "transfer"+bcolors.OKBLUE,phone_target,bcolors.ENDC+"has "+bcolors.OKGREEN+"Done!"+bcolors.ENDC
+        else:
+            if "Permission denied" in output:
+                pull_file_with_root(phone_target,local_target)
+            else:
+                print "transfer"+bcolors.OKBLUE,phone_target,bcolors.ENDC+"has "+bcolors.FAIL+"FAILED!"+bcolors.ENDC
+                print output
+def push_file_with_root(local_target,phone_target):
+        # print "use root to push"
+        if cs=="device":phone_target_tmp='sdcard/'
+        elif cs=="recovery":phone_target_tmp='cache/'
+        else :phone_target_tmp='sdcard/'
+        #print phone_target_tmp
+        really_push(local_target,phone_target_tmp,False)
+        local_target_name=common.get_file_name_only(local_target)
+        cmd="adb shell "+su[root_device]+" \"cp "+phone_target_tmp+local_target_name+" "+phone_target+"\""
+        print cmd
+        (status,output)=commands.getstatusoutput(cmd)
+def pull_file_with_root(phone_target,local_target):
+    global root_device
+    root_device=getDeviceInfo.Is_Device_Root()
+    print ">>>try to use root permission to pull"
+    phone_target_file=phone_target.split("/")[-1]
+    if cs=="device":phone_target_tmp='sdcard/'
+    elif cs=="recovery":phone_target_tmp='cache/'
+    else :phone_target_tmp='sdcard/'
+    cmd="adb shell "+su[root_device]+" \"cp "+phone_target+" "+phone_target_tmp+"\""
+    print cmd
+    (status,output)=commands.getstatusoutput(cmd)
+    print phone_target_tmp+phone_target_file,local_target
+    really_pull(phone_target_tmp+phone_target_file,local_target,False)
+
+
+#--------------流程区------------
+if len(option.file)==1:
+    op.print_help()
+    sys.exit(1)
+file1=option.file[0]
+file2=option.file[-1]
+cs=GetDeviceStatus.cs()
+if os.path.isfile(file1) or os.path.isdir(file1):
+    if file2[-1]=="/":
+        file2=file2[:-1]
+        pass
+    push_to_phone(file1,file2,True)
+    pass
+else:
+    pull_file_from_phone(file1,file2,True)

@@ -1,0 +1,164 @@
+#!/usr/local/bin/python
+#-*- coding:utf-8 -*-
+#此脚本用来登录常用的服务器
+import commands
+import sys
+import os
+import pexpect
+import termios
+import struct
+import fcntl
+import signal
+#-------------参数区---------------------
+home=os.environ['HOME']
+config_file=os.path.join(home,'.server')
+number=1
+addr=[]
+port=[]
+name=[]
+passwd=[]
+selected=False
+new_serve=False
+file_exist=False
+ssh=None
+#-------------函数区---------------------
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    LIGHT_BLUE = '\033[36m'
+    WARNING_ORANGE = '\033[33m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+def sigwinch_passthrough (sig, data):
+    winsize = getwinsize()
+    global ssh
+    ssh.setwinsize(winsize[0],winsize[1])
+def getwinsize():
+    """This returns the window size of the child tty.
+    The return value is a tuple of (rows, cols).
+    """
+    if 'TIOCGWINSZ' in dir(termios):
+        TIOCGWINSZ = termios.TIOCGWINSZ
+    else:
+        TIOCGWINSZ = 1074295912L # Assume
+    s = struct.pack('HHHH', 0, 0, 0, 0)
+    x = fcntl.ioctl(sys.stdout.fileno(), TIOCGWINSZ, s)
+    return struct.unpack('HHHH', x)[0:2]
+def check_env():
+    global file_exist
+    if os.path.isfile(config_file):
+        file_exist=True
+    else:
+        print "开始创建新的服务器配置:\t"+ config_file
+        fo=open(config_file,"a+")
+        fo.close()
+def login_serve():
+    if server_port == '':
+        cmd='ssh '+server_addr
+    else:
+        cmd='ssh -p '+server_port+' '+server_addr
+    ret=os.system(cmd)
+    return ret
+def ssh_cmd(port,addr, passwd):
+    global ssh
+    ret = -1
+    ssh = pexpect.spawn('ssh -p %s %s ' % (port,addr))
+    signal.signal(signal.SIGWINCH, sigwinch_passthrough)
+    winsize = getwinsize()
+    ssh.setwinsize(winsize[0], winsize[1])
+    print 'ssh -p %s %s ' % (port,addr)
+    try:
+        i = ssh.expect(['password:', 'continue connecting (yes/no)?','Password:'], timeout=5)
+        if i == 0 :
+            ssh.sendline(passwd)
+            ssh.interact()
+        elif i == 1:
+            ssh.sendline('yes\n')
+            ssh.expect('password: ')
+            ssh.sendline(passwd)
+            ssh.interact()
+        if i == 2 :
+            ssh.sendline(passwd)
+            ssh.interact()
+        r = ssh.read()
+        print r
+        ret = 0
+    except pexpect.EOF:
+        print "EOF"
+        ssh.close()
+        ret = -1
+    except pexpect.TIMEOUT:
+        print "TIMEOUT"
+        ssh.close()
+        ret = -2
+    return ret
+#-------------流程区---------------------
+check_env()
+while not selected:
+    for line in open(config_file):
+        if ":" in line:
+            addr.append(line.split(":")[2].strip())
+            port.append(line.split(":")[1].strip())
+            name.append(line.split(":")[0].strip())
+            try:
+                passwd.append(line.split(":")[3].strip())
+            except Exception, e:
+                passwd.append(None)
+
+
+            print str(number)+".\t"+bcolors.WARNING_ORANGE+name[number-1]+bcolors.ENDC+":\tport="+bcolors.LIGHT_BLUE+port[number-1]+bcolors.ENDC+ "\taddr="+bcolors.OKGREEN+addr[number-1]+bcolors.ENDC
+        number+=1
+    print str(number)+".\t"+bcolors.OKGREEN+"new"+bcolors.ENDC
+    try:
+        choose=int(raw_input('please input you chose:  '))
+    except Exception, e:
+        print "input text "+bcolors.FAIL+"error! "+bcolors.ENDC
+        print
+        number=1
+        continue
+    except KeyboardInterrupt:
+        print "\nOperation canceled."
+        sys.exit(0)
+    if choose < number:
+        selected=True
+    elif choose == number:
+        new_serve=True
+        selected=True
+    else:
+        print "input text "+bcolors.FAIL+"error! "+bcolors.ENDC
+        print
+        number=1
+if new_serve:
+    print "a new serve"
+    server_name=raw_input("请输入服务器名称：\t")
+    server_port=raw_input("请输入服务器端口号：\t")
+    user=raw_input("请输入远程用户名：\t")
+    addr=raw_input("请输入服务器ip地址：\t")
+    server_addr=user+'@'+addr
+    print "new.\t"+bcolors.WARNING_ORANGE+server_name+bcolors.ENDC+":\tport="+bcolors.LIGHT_BLUE+server_port+bcolors.ENDC+ "\taddr="+bcolors.OKGREEN+server_addr+bcolors.ENDC
+    ret=login_serve()
+    if ret==0:
+        fo=open(config_file,"a+")
+        # print file_exist
+        if file_exist:
+            fo.write('\n')
+        fo.write(server_name+':'+server_port+':'+user+'@'+addr)
+        fo.close()
+    else:
+        print str(ret)
+else:
+    print "addr="+addr[choose-1]
+    print "port="+port[choose-1]
+    server_port=port[choose-1]
+    server_addr=addr[choose-1]
+    server_passwd=passwd[choose-1]
+    server_name=name[choose-1]
+
+    if server_passwd==None:
+        login_serve()
+    else:
+        ssh_cmd(server_port, server_addr, server_passwd)

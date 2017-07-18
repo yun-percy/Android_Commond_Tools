@@ -1,0 +1,284 @@
+#!/usr/bin/python
+#-*- coding:utf-8 -*-
+import os
+import sys
+import argparse
+import commands
+import shutil
+import common
+from common import bcolors
+import ConfigParser
+#-------------参数区---------------------
+op=argparse.ArgumentParser(description='This Sript is used for unpack boot_img')
+op.add_argument('boot_img',nargs="+", type=str,help='请输入一个boot.img或者recovery.img')
+option=op.parse_args()
+boot_img=option.boot_img[0]
+try:
+    target=option.boot_img[1]
+except Exception, e:
+    target=None
+if len(option.boot_img)==3:
+    op.print_help()
+    sys.exit(1)
+boot_img_name=common.get_file_name_only(boot_img)
+cmdline='error'
+kernel_base='0x0'
+kernel_page_size='2048'
+ramdisk_offset='0x0'
+tags_offset='0x0'
+TARGET_CPU_ABI='None'
+TARGET_CPU_ABI2='None'
+cf=ConfigParser.ConfigParser()
+#-------------函数区---------------------
+def check_bootimg(boot_img):
+    global config_ini
+    if '.img' in boot_img:
+        pass
+    else:
+        print "E:/ please input a imagefile!"
+        sys.exit(1)
+    if os.path.isfile(boot_img):
+        pass
+    else:
+        print 'E:/ '+boot_img+" Can't Found!"
+        sys.exit(1)
+    if os.path.isdir(boot_img_name):
+        time=str(common.get_time())
+        os.renames(boot_img_name, time+'_'+boot_img_name)
+    common.mkdir(boot_img_name)
+    config_ini=open(boot_img_name+'/config.ini','w')
+def check_bootdir(boot_dir):
+    if os.path.isfile(out_img):
+        time=str(common.get_time())
+        os.renames(out_img, time+'_'+out_img)
+    cf.read(boot_dir+'/config.ini')
+def unpack_image_to_dir():
+    global cmdline,\
+        kernel_base,\
+        kernel_page_size,\
+        ramdisk_offset,\
+        tags_offset,\
+        boot_img
+    cmd='grep -abo ANDROID! '+boot_img+' | cut -f 1 -d :'
+    (status,kernel_base)=commands.getstatusoutput(cmd)
+    # print 'kernel_base='+kernel_base
+    if status!=0:
+        sys.exit(1)
+    if int(kernel_base)>0:
+        cmd='dd if='+boot_img+' of='+boot_img+' bs='+kernel_base+' skip=1'
+        # print cmd
+        (status,output)=commands.getstatusoutput(cmd)
+        boot_img=boot_img
+        # print status,output
+    cmd="od -A n -D -j 40 -N 4 "+boot_img+" | sed 's/ //g'"
+    (status,dtb_size)=commands.getstatusoutput(cmd)
+    cmd="od -A n -H -j 12 -N 4 "+boot_img+" | sed 's/ //g'"
+    (status,kernel_v)=commands.getstatusoutput(cmd)
+    cmd="od -A n -H -j 20 -N 4 "+boot_img+" | sed 's/ //g'"
+    (status,ramdisk_v)=commands.getstatusoutput(cmd)
+    cmd="od -A n -H -j 28 -N 4 "+boot_img+" | sed 's/ //g'"
+    (status,second_v)=commands.getstatusoutput(cmd)
+    cmd="od -A n -H -j 32 -N 4 "+boot_img+" | sed 's/ //g'"
+    (status,tags_v)=commands.getstatusoutput(cmd)
+    if int(dtb_size)>0:
+        old_bootimg=False
+        kernel_offset=kernel_v
+        ramdisk_offset=ramdisk_v
+        second_offset=second_v
+        tags_offset=tags_v
+    else:
+        old_bootimg=True
+        kernel_addr=kernel_v
+        ramdisk_addr=ramdisk_v
+        second_addr=second_v
+        tags_addr=tags_v
+    cmd="od -A n -D -j 8 -N 4 "+boot_img+" | sed 's/ //g'"
+    (status,kernel_size)=commands.getstatusoutput(cmd)
+    cmd="od -A n -h -j 14 -N 2 "+boot_img+" | sed 's/ //g'"
+    (status,base_addr)=commands.getstatusoutput(cmd)
+    cmd="od -A n -D -j 16 -N 4 "+boot_img+" | sed 's/ //g'"
+    (status,ramdisk_size)=commands.getstatusoutput(cmd)
+    cmd="od -A n -D -j 24 -N 4 "+boot_img+" | sed 's/ //g'"
+    (status,second_size)=commands.getstatusoutput(cmd)
+    cmd="od -A n -D -j 36 -N 4 "+boot_img+" | sed 's/ //g'"
+    (status,page_size)=commands.getstatusoutput(cmd)
+    cmd="od -A n --strings -j 64 -N 512 "+boot_img
+    (status,cmd_line)=commands.getstatusoutput(cmd)
+
+    k_count=(int(kernel_size)+int(page_size)-1)/int(page_size)
+    r_count=(int(ramdisk_size)+int(page_size)-1)/int(page_size)
+    s_count=(int(second_size)+int(page_size)-1)/int(page_size)
+    d_count=(int(dtb_size)+int(page_size)-1)/int(page_size)
+    k_offset=1
+    r_offset=k_offset+k_count
+    s_offset=r_offset+r_count
+    d_offset=s_offset+s_count
+    cmd='dd if='+boot_img+' of=zImage_tmp bs='+page_size+' skip='+str(k_offset)+' count='+str(k_count)
+    # print cmd
+    (status,output)=commands.getstatusoutput(cmd)
+    # print status,output
+    cmd='dd if=zImage_tmp of='+boot_img_name+'/zImage bs='+kernel_size+' count=1'
+    (status,output)=commands.getstatusoutput(cmd)
+    # print status,output
+    cmd='dd if='+boot_img+' of=ramdisk_tmp bs='+page_size+' skip='+str(r_offset)+' count='+str(r_count)
+    (status,output)=commands.getstatusoutput(cmd)
+    # print status,output
+    cmd='dd if=ramdisk_tmp of=ramdisk.gz bs='+ramdisk_size+' count=1'
+    (status,output)=commands.getstatusoutput(cmd)
+    # print status,output
+    if int(dtb_size) >0:
+        cmd='dd if='+boot_img+' of=dt.img_tmp bs='+page_size+' skip='+str(d_offset)+' count='+str(d_count)
+        (status,output)=commands.getstatusoutput(cmd)
+        # print status,output
+        cmd='dd if=dt.img_tmp of='+boot_img_name+'/dt.img bs='+dtb_size+' count=1'
+        (status,output)=commands.getstatusoutput(cmd)
+        # print status,output
+        dt='dt.img'
+    if os.path.isdir(boot_img_name+'/ramdisk'):
+        shutil.rmtree(boot_img_name+'/ramdisk')
+    common.mkdir(boot_img_name+'/ramdisk')
+    os.chdir(boot_img_name+'/ramdisk')
+    cmd='gzip -d -c ../../ramdisk.gz | cpio -i -d -m  --no-absolute-filenames'
+    (status,output)=commands.getstatusoutput(cmd)
+    # print status,output
+    get_cpu_infomation('default.prop')
+    os.chdir('../../')
+    cf.add_section('file')
+    cf.add_section('addr')
+    cf.set('file','kernel','zImage')
+    cf.set('file','ramdisk','ramdisk')
+    cf.set('addr','base','0x'+base_addr)
+    cf.set('addr','cmdline',cmd_line)
+    # print old_bootimg
+    if old_bootimg:
+        print 'page_size='+page_size
+        print 'kernel_size='+kernel_size
+        print 'base_addr='+'0x'+base_addr
+        print 'ramdisk_size='+ramdisk_size
+        print 'second_size='+second_size
+        print 'kernel_addr='+'0x'+kernel_addr
+        print 'ramdisk_addr='+'0x'+ramdisk_addr
+        ramdisk_offset='0x'+ramdisk_addr
+        print 'second_addr='+'0x'+second_addr
+        print 'tags_addr='+'0x'+tags_addr
+        tags_offset='0x'+tags_addr
+        print 'cmd_line='+cmd_line
+        cf.set('addr','ramdiskaddr','0x'+ramdisk_addr)
+    else:
+        print 'page_size='+page_size
+        print 'kernel_size='+kernel_size
+        print 'base_addr='+'0x'+base_addr
+        print 'ramdisk_size='+ramdisk_size
+        print 'dtb_size='+dtb_size
+        print 'second_size='+second_size
+        print 'cmd_line='+cmd_line
+        print 'kernel_offset='+'0x'+kernel_offset
+        print 'ramdisk_offset='+'0x'+ramdisk_offset
+        ramdisk_addr='0x'+ramdisk_offset
+        print 'second_offset='+'0x'+second_offset
+        print 'tags_offset='+'0x'+tags_offset
+        tags_offset='0x'+tags_offset
+        cf.set('file','dt','dt.img')
+        cf.set('addr','ramdiskaddr','0x'+ramdisk_offset)
+        cf.set('addr','tags_offset',tags_offset)
+    cf.write(config_ini)
+    kernel_base='0x'+base_addr
+    cmdline=cmd_line
+    kernel_page_size=page_size
+def pack_boot_dir_to_img():
+    global kernel
+    global base_addr
+    global cmdline
+    global dt
+    # print cf.sections()
+    kernel=cf.get('file', 'kernel')
+    ramdisk_dir=cf.get('file','ramdisk')
+    base_addr=cf.get('addr', 'base')
+    cmdline=cf.get('addr', 'cmdline')
+    ramdisk_addr=cf.get('addr', 'ramdiskaddr')
+    try:
+        dt=cf.get('file', 'dt')
+        old_bootimg=False
+    except Exception, e:
+        dt=None
+        old_bootimg=True
+    try:
+        tags_offset=cf.get('addr', 'tags_offset')
+    except Exception, e:
+        tags_offset=''
+    if os.path.isdir(boot_dir+'/'+ramdisk_dir):
+        os.chdir(boot_dir+'/'+ramdisk_dir)
+        if os.path.isfile('../new_ramdisk.gz'):
+            os.remove('../new_ramdisk.gz')
+        command='find . | cpio -R 0:0 -H newc -o 2>/dev/null | gzip > ../new_ramdisk.gz'
+        os.system(command)
+        os.chdir('../../')
+    else:
+        print 'Can\'t find '+boot_dir+'/ramdisk!'
+        sys.exit(1)
+    os.chdir(boot_dir)
+    print "=================================="
+    print "kernel = zImage"
+    print "ramdisk = ramdisk"
+    print "base = ",base_addr
+    print "cmdline = ",cmdline
+    if old_bootimg:
+        print "ramdiskaddr = ",ramdisk_addr
+        cmd='mkbootimg --kernel '+kernel+' --ramdisk new_ramdisk.gz --base '+base_addr+' --ramdiskaddr '+ramdisk_addr+' --cmdline "'+cmdline+'" -o ../'+out_img
+        # print cmd
+        (status,output)=commands.getstatusoutput(cmd)
+
+        # print output
+    else:
+        print "dt = dt.img"
+        print "ramdisk_offset = ",ramdisk_addr
+        print "tags_offset = ",tags_offset
+        cmd='mkbootimg_dtb --kernel '+kernel+' --ramdisk new_ramdisk.gz --base '+base_addr+' --ramdisk_offset '+ramdisk_addr+' --tags_offset '+tags_offset+' --dt '+dt+' --cmdline "'+cmdline+'" -o ../'+out_img
+        # print cmd
+        (status,output)=commands.getstatusoutput(cmd)
+        # print output
+    print "=================================="
+    if len(output)==0:
+        print "make "+bcolors.LIGHT_BLUE+out_img+bcolors.OKGREEN+" Done!"+bcolors.ENDC
+    # print kernel,dt,base_addr,cmdline
+def clean_workspace():
+    # shutil.rmtree('ramdisk')
+    os.remove('ramdisk.gz')
+    os.remove('ramdisk_tmp')
+    os.remove('zImage_tmp')
+    if os.path.isfile('dt.img_tmp'):
+        os.remove('dt.img_tmp')
+def get_cpu_infomation(file):
+    global TARGET_CPU_ABI,TARGET_CPU_ABI2
+    # print os.getcwd()
+    build_prop=open(file,'r')
+    # line=build_prop.readline()
+    import time
+    for line in build_prop.readlines():
+        # time.sleep(1)
+        # print line
+        if 'cpu.abi=' in line:
+            TARGET_CPU_ABI=line.split('=')[-1].strip()
+            print 'TARGET_CPU_ABI='+TARGET_CPU_ABI
+        if 'cpu.abi2' in line:
+            TARGET_CPU_ABI2=line.split('=')[-1].strip()
+            print 'TARGET_CPU_ABI2='+TARGET_CPU_ABI2
+#-------------流程区---------------------
+if os.path.isfile(boot_img):
+    if target:
+        boot_img_name=target
+    check_bootimg(boot_img)
+    unpack_image_to_dir()
+    clean_workspace()
+elif os.path.isdir(boot_img):
+    boot_dir=boot_img
+    if target:
+        out_img=target
+    else:
+        out_img=boot_dir+'.img'
+    check_bootdir(boot_dir)
+    pack_boot_dir_to_img()
+else:
+    op.print_help()
+
+

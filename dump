@@ -1,0 +1,90 @@
+#!/usr/bin/python
+#-*- coding:utf-8 -*-
+#此脚本使用在Android 各项处理上
+#制作者：振云
+import commands
+import sys
+import re
+import argparse
+from common import bcolors
+#-------------参数区---------------------
+parse=argparse.ArgumentParser(description="this Python script is used for analysis apk ")
+parse.add_argument('-s',action='store_true',help="<start> Trying to start the apk,if your Android Device Connected")
+parse.add_argument('-i',action='store_true',help="<info> see the info of apk")
+parse.add_argument('files',type=str,help="<apk> input apk to dump it")
+args=parse.parse_args()
+dumpinfo='null'
+#-------------函数区---------------------
+def get_app_name():
+	global dumpinfo
+	cmd='aapt dump badging '+project
+	app_name='null'
+	# print cmd
+	(status,dumpinfo)=commands.getstatusoutput(cmd)
+
+	if status !=0:
+		print 'dump '+bcolors.FAIL+'Failed'+bcolors.ENDC+':'
+		print dumpinfo
+		sys.exit(1)
+	for line in dumpinfo.splitlines():
+		if line.find('application-label-zh:')>=0:
+			app_name=line
+			# print line
+			break
+		elif line.find('application-label:')>=0:
+			app_name=line
+			# print line
+		else:
+			pass
+	if app_name=='null':
+		print "Can't find application-label in project"
+	app_name=app_name.split(':')[-1].strip("'")
+	return app_name
+def get_app_package_name():
+	app_package_name='null'
+	for line in dumpinfo.splitlines():
+		if line.find('package: name=')>=0:
+			app_package_name=line
+			# print line
+			break
+		else:
+			pass
+	if app_package_name=='null':
+		print "Can't find app_package_name in project"
+	app_package_name=re.split('=| ',app_package_name)[2].strip("'")
+	return app_package_name
+def get_app_main_activity():
+	app_main_activity='null'
+	for line in dumpinfo.splitlines():
+		if line.find('launchable-activity: name=')>=0:
+			app_main_activity=line
+			# print line
+			break
+		else:
+			pass
+	if app_main_activity=='null':
+		print "Can't find app_main_activity in project"
+	app_main_activity=re.split('=| ',app_main_activity)[2].strip("'")
+	return app_main_activity
+#-------------流程区---------------------
+project=args.files
+app_name=get_app_name()
+app_package_name=get_app_package_name()
+app_main_activity=get_app_main_activity()
+# print app_name,app_package_name,app_main_activity
+# print args.s,args.i,args.files
+
+if args.s:
+	print 'let\'s start '+project+' in your Android Device'
+	cmd='adb shell am start -n '+app_package_name+'/'+app_main_activity
+	# print cmd
+	output=commands.getoutput(cmd)
+	if "Error type" in output:
+		print 'Start '+project+bcolors.FAIL+' Failed'+bcolors.ENDC+':'
+		print output
+	print 'Start '+project+bcolors.OKGREEN+' Succeeded'+bcolors.ENDC+'!'
+if args.i:
+	print bcolors.OKGREEN+'Device info :',bcolors.ENDC
+	print 'app_name:',bcolors.OKBLUE,app_name,bcolors.ENDC
+	print 'app_package_name:',bcolors.OKBLUE,app_package_name,bcolors.ENDC
+	print 'app_main_activity:',bcolors.OKBLUE,app_main_activity,bcolors.ENDC

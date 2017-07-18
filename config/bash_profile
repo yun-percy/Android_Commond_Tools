@@ -1,0 +1,237 @@
+#这些别名真的很简单并且真的很短，但他们大多数是为了给你的生命节省几秒钟，最终也许为你这一辈子节省出来几年，也许呢。
+
+#环境变量设置
+export ANT_HOME=/usr/bin/apache-ant-1.9.7
+export PATH=${PATH}:/usr/local/bin:${ANT_HOME}/bin
+export PATH=$PATH:~/bin
+export NO_PROXY=git.code.oa.com,api.tapd.oa.com,maven.oa.com,api.rdm.wsd.com,download.ext.wsd.com,test.api.tof.oa.com,npm.oa.com,*.wsd.com,*.oa.com,api.weixin.oa.com
+. ~/bin/config/envsetup #初始化工具集
+unset _JAVA_OPTIONS
+PATH=/usr/local/opt/coreutils/libexec/gnubin:$PATH
+MANPATH="/usr/local/opt/coreutils/libexec/gnuman:$MANPATH"
+
+alias ls="ls --color=auto  -F -h"
+#简单但非常重要。使ls命令带着彩色输出。
+
+alias ll="ls --color=auto -al"
+#以彩色的列表方式列出目录里面的全部文件。
+
+alias grep='grep --color=auto'
+#类似，只是在grep里输出带上颜色。
+
+mcd() { mkdir -p "$1"; cd "$1";}
+#我的最爱之一。创建一个目录并进入该目录里： mcd [目录名]。
+
+
+cls() { cd "$1"; ls;}
+#类似上一个函数，进入一个目录并列出它的的内容：cls[目录名]。
+
+backup() { cp "$1"{,.bak};}
+#简单的给文件创建一个备份: backup [文件] 将会在同一个目录下创建 [文件].bak。
+
+md5check() { md5sum "$1" | grep "$2";}
+#因为我讨厌通过手工比较文件的md5校验值，这个函数会计算它并进行比较：md5check[文件][校验值]。
+
+
+
+alias makescript="fc -rnl | head -1 >"
+#很容易用你上一个运行的命令创建一个脚本：makescript [脚本名字.sh]
+
+alias genpasswd="strings /dev/urandom | grep -o '[[:alnum:]]' | head -n 30 | tr -d '\n'; echo"
+#只是瞬间产生一个强壮的密码。
+
+
+
+alias c="clear"
+#清除你终端屏幕不能更简单了吧？
+
+alias histg="history | grep"
+#快速搜索你的命令输入历史：histg [关键字]
+
+alias ..='cd ..'
+#回到上层目录还需要输入 cd 吗？
+
+alias ...='cd ../..'
+#自然，去到上两层目录。
+
+alias ....='cd ../../../'
+alias .....='cd ../../../../'
+#cd 加强
+
+#系统信息
+
+#想尽快地知道关于你的系统一切信息？
+
+alias cmount="mount | column -t"
+#按列格式化输出mount信息。
+
+
+
+# alias tree="ls -R | grep "" | sed -e 's///' -e 's/[^-][^\/]*\//--/g' -e 's/^/   /' -e 's/-/|/'"
+#以#树形结构递归地显示目录结构。
+
+sbs() { du -b --max-depth 1 | sort -nr | perl -pe 's{([0-9]+)}{sprintf "%.1f%s", $1>=2**30? ($1/2**30, "G"): $1>=2**20? ($1/2**20, "M"): $1>=2**10? ($1/2**10, "K"): ($1, "")}e';}
+ #安装文件在磁盘存储的大小排序，显示当前目录的文件列表。
+
+alias intercept="sudo strace -ff -e trace=write -e write=1,2 -p"
+#接管某个进程的标准输出和标准错误。注意你需要安装了 strace。
+
+alias meminfo='free -m -l -t'
+#查看你还有剩下多少内存。
+
+
+
+# alias ps1= "ps aux | grep"
+#可以很容易地找到某个进程的PID：ps? [名字]。
+
+alias volume="amixer get Master | sed '1,4 d' | cut -d [ -f 2 | cut -d ] -f 1"
+#显示当前音量设置。
+
+#网络
+
+#对于所有用在互联网和本地网络的命令，也有一些神奇的别名给它们。
+
+alias websiteget="wget --random-wait -r -p -e robots=off -U mozilla"
+#下载整个网站：websiteget [URL]。
+
+alias listen="lsof -P -i -n"
+#显示出哪个应用程序连接到网络。
+
+alias port='netstat -tulanp'
+#显#示出活动的端口。
+
+# gmail() { curl -u "$1" --silent "https://mail.google.com/mail/feed/atom" | sed -e 's/<\/fullcount.*/\n/' | sed -e 's/.*fullcount>//'}
+#大概的显示你的谷歌邮件里未读邮件的数量：gmail [用户名]
+
+alias ipinfo="curl ifconfig.me && curl ifconfig.me/host"
+#获得你的公网IP地址和主机名。
+
+getlocation() { lynx -dump http://www.ip-adress.com/ip_tracer/?QRY=$1|grep address|egrep 'city|state|country'|awk '{print $3,$4,$5,$6,$7,$8}'|sed 's\ip address flag \\'|sed 's\My\\';}
+#返回你的当前IP地址的地理位置。
+
+#也许无用
+
+#所以呢，如果一些别名并不是全都具有使用价值？它们可能仍然有趣。
+
+kernelgraph() { lsmod | perl -e 'print "digraph \"lsmod\" {";<>;while(<>){@_=split/\s+/; print "\"$_[0]\" -> \"$_\"\n" for split/,/,$_[3]}print "}"' | dot -Tpng | display -;}
+#绘制内核模块依赖曲线图。需要可以查看图片。
+
+alias busy="cat /dev/urandom | hexdump -C | grep 'ca fe'"
+#在那些非技术人员的眼里你看起来是总是那么忙和神秘。
+
+o:(){
+	adb logcat -s System.out
+}
+e:(){
+	adb logcat *:e
+}
+findout(){
+	find . -name "*.$1"  -exec grep -l "$2" {} \;
+	#查找根据文件内容查找匹配项　命令结构为　find　后缀名　匹配内容，如：find java void
+
+}
+
+lun(){
+#初始化机型快捷命令
+    lunch cm_$1-eng
+}
+mc(){
+    make recoveryimage -j16
+    #编译recovery用的快捷命令
+}
+mq(){
+    make qrom_otapackage -j32
+    #编译qrom zip包快捷命令
+}
+sj(){
+    #切换java环境变量的快捷命令(switchjava)
+    sudo update-alternatives --config java
+    sudo update-alternatives --config javac
+}
+#编辑bashrc快捷键
+bashrc(){
+    cd ~
+    vim ~/.bashrc
+    cd -
+}
+#bash 历史的一些优化
+HISTCONTROL=ignoredups
+HISTCONTROL=erasedups
+shopt -s histappend
+shopt -s cdspell
+set completion-ignore-case on
+set visible-stats on
+#ruby的一些优化
+export RUBYOPT="-U -Ku -E utf-8:utf-8"
+alias subl="/Applications/Sublime\ Text.app/Contents/SharedSupport/bin/subl"
+rename_suffix(){
+    # 自动重命名函数，支持批处理
+    read -p "请输入新的后缀名，例如：bak   ：" suffix
+    while [ -n "$1" ]
+    do
+        for i in $1
+        do
+            realname=`echo $i |sed 's/\(.*\)\..*$/\1/'`
+            mv $i ${realname}.$suffix
+        done
+    shift
+    done
+}
+download(){
+    # 下载函数
+    filenames=`echo $1 | awk -F = '{print $2}'`
+    wget $1 -O  ~/packages/$filenames
+}
+repo_sync(){
+    # 自动同步函数
+    repo sync
+    while [ $? == 1 ]
+    do
+       echo -e "\033[31m repo failed,restart.....\033[0m"
+        repo sync
+    done
+    echo -e "\033[32mDone!\033[0m"
+}
+GET_REL_NAME(){
+    REAL_NAME=`echo $1 |sed 's/\(.*\)\..*$/\1/'`
+    echo "$REAL_NAME"
+}
+ads(){
+    cs
+    adb shell
+}
+gs(){
+    # 不是勇士队的缩写！ git status
+    ~/bin/gs
+}
+gd(){
+    #  git diff
+    git diff
+}
+last_log(){
+    cs
+    status=$?
+    [ $status == 2 ]&& adb shell su -c "cat cache/recovery/last_log"
+    [ $status == 3 ]&& adb shell "cat cache/recovery/last_log"
+}
+
+last_log.1(){
+    cs
+    status=$?
+    [ $status == 2 ]&& adb shell su -c "cat cache/recovery/last_log.1"
+    [ $status == 3 ]&& adb shell "cat cache/recovery/last_log.1"
+}
+export USE_CCACHE=1
+#重定义提示符
+delete_Trash(){
+    echo -S "yunsun" | sudo rm -rf ~/.local/share/Trash
+}
+alias dstat='dstat -cdlmnpsy'
+alias slurm='slurm -i en1'
+alias kb='~/Desktop/kill_bash.sh'
+export GRADLE_HOME=/data2/gradle-2.14.1/;
+export ANT_HOME=/data2/android-ndk-r13
+export PATH=$PATH:$GRADLE_HOME/bin:$ANT_HOME
+. ~/bin/config/bash_aliases
+
+export HOMEBREW_BOTTLE_DOMAIN=http://android.oa.com/homebrew/

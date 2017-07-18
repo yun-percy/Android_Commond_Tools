@@ -22,17 +22,19 @@ def print_apk_cert():
     print_cert_info(apk_rsa_path)
 def print_cert_info(cert):
     cmd='keytool -printcert -file '+cert
-    # print cmd
     (status,output)=commands.getstatusoutput(cmd)
-    os.system('clear')
     print output
+def print_keystore_info(keystore):
+    cmd='keytool -list -v -keystore %s' % keystore
+    os.system(cmd)
 #-------------流程区---------------------
 TARGET=options.file
-# print TARGET
-if '.apk' in TARGET:
+if '.apk' in TARGET or '.zip' in TARGET:
     print_apk_cert()
 elif 'x509.pem' in TARGET or 'RSA' in TARGET:
     print_cert_info(TARGET)
+elif 'keystore' in TARGET:
+    print_keystore_info(TARGET)
 else:
     print "不支持这种格式的文件！"
     sys.exit(1)

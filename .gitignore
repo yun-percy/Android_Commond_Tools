@@ -3,3 +3,6 @@
 security/zte/
 Android_test_packages/
 *Tencent*
+server
+bundle
+.DS_Store

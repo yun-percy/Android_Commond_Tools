@@ -1,0 +1,35 @@
+#!/usr/bin/python
+#-*- coding:utf-8 -*-
+"重置svn目录中修改过的文件"
+"批量删除svn新增垃圾文件"
+"2016-06-14:新增对空格文件的处理"
+import os
+import sys
+import commands
+#-------------参数区---------------------
+#-------------函数区---------------------
+def svn_revert():
+    cmd="svn revert --recursive ."
+    (status,output)=commands.getstatusoutput(cmd)
+    return status,output
+def svn_delete():
+    cmd="svn st"
+    (status,output)=commands.getstatusoutput(cmd)
+    if output=="":
+        return 0,"Noting change"
+    svn_list=[]
+    svn_list=list(output.split('\n'))
+    for file in svn_list:
+        if '?' in file:
+            filename=file[2:].lstrip()
+            cmd="svn delete '%s' --force" % filename
+            status,output=commands.getstatusoutput(cmd)
+            if status!=0:
+                return status,output
+    return status,output
+#-------------流程区---------------------
+def main():
+    svn_revert()
+    svn_delete()
+if __name__ == '__main__':
+    main()

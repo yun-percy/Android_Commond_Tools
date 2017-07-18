@@ -1,0 +1,92 @@
+#!/usr/bin/python
+#-*- coding:utf-8 -*-
+#此脚本deodex 5.1
+import argparse
+import common
+import sys
+import os
+import shutil
+import zipfile
+#-------------参数区---------------------
+# op=argparse.ArgumentParser(description="deodex file for Android 5.1")
+# op.add_argument
+local_path=os.getcwd()
+boot_oat=os.path.join(local_path,'framework','arm','boot.oat')
+boot_art=os.path.join(local_path,'framework','arm','boot.art')
+framework_path=os.path.join(local_path,'framework')
+app_path=os.path.join(local_path,'app')
+privapp_path=os.path.join(local_path,'priv-app')
+#-------------函数区---------------------
+def deodex_framework():
+    jar_class_file=None
+    os.chdir(framework_path)
+    print os.getcwd()
+    for root,dir,odexfiles in os.walk(framework_path):
+        for file_name in odexfiles:
+            file_name_path=os.path.join(root,file_name)
+            if '.odex' in file_name_path:
+                cmd='dextra.ELF64  -dextract '+file_name_path
+                os.system(cmd)
+    if os.path.isfile(boot_oat):
+        print 'deodexing boot.oat'
+        cmd='dextra.ELF64  -dextract '+boot_oat
+        os.system(cmd)
+    else:
+        print "Can't find "+boot_oat
+        sys.exit(1)
+    for root,dir,classfiles in os.walk(framework_path):
+        for file_name in classfiles:
+            classfile=os.path.join(root,file_name)
+            if '@' in classfile:
+                jar_file=str(classfile).split('@')[2]
+                if ':' in jar_file:
+                    classfile_name=jar_file.split(':')[1]
+                    jar_file=os.path.join(os.getcwd(),jar_file.split(':')[0])
+                else:
+                    jar_file=os.path.join(os.getcwd(),jar_file)
+                    classfile_name="classes.dex"
+                jarfile=zipfile.ZipFile(jar_file,'a',zipfile.ZIP_STORED)
+                print 'zip '+classfile+' into '+jar_file
+                jarfile.write(classfile,classfile_name)
+                os.remove(classfile)
+def deodex_app(path):
+    os.chdir(os.path.join(local_path,path))
+    for root,dir,files in os.walk(os.path.join(local_path,path)):
+        for file_name in files:
+            file_name_path=os.path.join(root,file_name)
+            if '.odex' in file_name_path:
+                print file_name_path
+                cmd='dextra.ELF64  -dextract '+file_name_path
+                os.system(cmd)
+    for root,dir,files in os.walk(os.path.join(local_path,path)):
+        for file_name in files:
+            file_name_path=os.path.join(root,file_name)
+            if '@' in file_name_path:
+                apk_file=str(file_name_path).split('@')[2]
+                if ':' in apk_file:
+                    classfile_name=apk_file.split(':')[1]
+                    apk_file=os.path.join(os.getcwd(),apk_file.split(':')[0],apk_file.split(':')[0]+'.apk')
+                else:
+                    apk_file=os.path.join(os.getcwd(),apk_file,apk_file+'.apk')
+                    classfile_name="classes.dex"
+                print 'zip '+file_name_path+' into '+apk_file
+                apkfile=zipfile.ZipFile(apk_file,'a',zipfile.ZIP_STORED)
+                apkfile.write(file_name_path,classfile_name)
+                os.remove(file_name_path)
+def clean_all_odex():
+    os.chdir(local_path)
+    for root,dir,files in os.walk(local_path):
+        for file_name in files:
+            file_name_path=os.path.join(root,file_name)
+            if '.odex' in file_name_path:
+                print 'rm '+file_name_path
+                os.remove(file_name_path)
+
+#-------------流程区---------------------
+deodex_framework()
+if os.path.isdir(app_path):
+    print 'deodexing app folder.....'
+    deodex_app(app_path)
+if os.path.isdir(privapp_path):
+    deodex_app(privapp_path)
+clean_all_odex()

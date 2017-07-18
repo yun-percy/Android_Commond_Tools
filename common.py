@@ -37,6 +37,30 @@ def mkdir(path):
         # 如果目录存在则不创建，并提示目录已存在
         # print '目录 '+path+' 已存在'
         return False
+def read_apktool_jar():
+	import ConfigParser
+	import os
+	cp=ConfigParser.ConfigParser()
+	home_path=os.environ['HOME']
+	# print home_path
+	cp.read(home_path+"/bin/config/env.conf")
+	return cp.get('apktools', 'apktool_jar')
+def read_signapk_jar():
+	import ConfigParser
+	import os
+	cp=ConfigParser.ConfigParser()
+	home_path=os.environ['HOME']
+	# print home_path
+	cp.read(home_path+"/bin/config/env.conf")
+	return cp.get('apktools', 'signapk_jar')
+def read_key_path():
+	import ConfigParser
+	import os
+	cp=ConfigParser.ConfigParser()
+	home_path=os.environ['HOME']
+	# print home_path
+	cp.read(home_path+"/bin/config/env.conf")
+	return cp.get('folder', 'key_path')
 def get_time():
 	import time
 	system_time=time.time()
@@ -62,6 +86,14 @@ def get_file_name_only(file):
 	suffix=os.path.splitext(file)[1]
 	file_name=file.strip(suffix).split('/')[-1]
 	return file_name
+def set_apktool_jar(version):
+	apktool_jar='apktool'+version+'.jar'
+	jar_file=open('/tmp/apktool_jar','w')
+	jar_file.truncate()
+	jar_file.write(apktool_jar)
+	jar_file.close()
+def set_sign_key(key_type):
+	key=''
 def check_file_exist(file,exit):
     import os
     import sys
@@ -69,4 +101,67 @@ def check_file_exist(file,exit):
         print bcolors.FAIL+'Can\'t '+bcolors.ENDC+'find the '+bcolors.OKBLUE+file
         if exit:
             sys.exit(1)
+def filetypeList():
+    return{
+    "52617221":"RAR",
+    "504B0304":"ZIP",
+    "FFD8FF":"JPEG",
+    "89504E47":"PNG",
+    "47494638":"GIF",
+    "49492A00":"TIFF",
+    "424D":"Bitmap",
+    "41433130":"CAD",
+    "38425053":"psd",
+    "7B5C727466":"rtf",
+    "3C3F786D6C":"XML",
+    "68746D6C3E":"HTML",
+    "44656C69766572792D646174653A":"Email",
+    "CFAD12FEC5FD746F":"Outlook",
+    "2142444E":"Outlook_pst",
+    "D0CF11E0":"Word/Excel",
+    "5374616E64617264204A":"mdb",
+    "FF575043":"wpd",
+    "252150532D41646F6265":"eps",
+    "255044462D312E":"pdf",
+    "AC9EBD8F":"qdf",
+    "E3828596":"pwl",
+    "57415645":"Wave",
+    "41564920":"AVI",
+    "2E7261FD":"Real_Audio",
+    "2E524D46":"Real Media",
+    "000001BA":"MPEG",
+    "000001B3":"MPEG",
+    "6D6F6F76":"Quicktime",
+    "3026B2758E66CF11":"Windows_Media",
+    "4D546864":"MIDI"
+    }
+def byte2hex(bytes):
+    num=len(bytes)
+    hexstr=u""
+    for i in range(num):
+        t=u"%x" % bytes[i]
+        if len(t)%2:
+            hexstr +=u"0"
+        hexstr+=t
+    return hexstr.upper()
+def check_file_type(file):
+    import struct
+    binfile=open(file,'rb')
+    tl=filetypeList()
+    ftype='unknown'
+    for hcode in tl.keys():
+        numberOfBytes=len(hcode)/2
+        binfile.seek(0)
+        try:
+            hbytes=struct.unpack_from("B"*numberOfBytes,binfile.read(numberOfBytes))
+        except Exception, e:
+            # print "unknown"
+            ftype="empty"
+            return ftype
+        f_hcode=byte2hex(hbytes)
+        if f_hcode == hcode:
+            ftype=tl[hcode]
+            break
+    binfile.close()
+    return ftype
 #-------------流程区---------------------

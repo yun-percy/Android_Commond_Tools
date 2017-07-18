@@ -1,0 +1,86 @@
+#!/usr/bin/python
+#-*- coding:utf-8 -*-
+#此脚本使用在Android 各项处理上
+#制作者：振云
+
+import sys
+import GetDeviceStatus
+import getDeviceInfo
+import commands
+from common import bcolors
+
+su=['','su -c','null']
+# print len(sys.argv)
+if len(sys.argv)==2:
+	pass
+elif len(sys.argv)==3:
+	pass
+else:
+	print """
+Usage:
+	fr [recoveryimage].img
+
+it's means flash recovery recoveryimage
+if you in Normal Mode Or recovery Mode:
+
+	adb push recovery.img sdcard/
+	adb shell "dd if=sdcard/recovery.img of=/dev/block/platform/*/by-name/recovery"
+
+it will push recoveryimage to cache or sdcard path,and use dd command flash recovery
+if you in fastboot Mode:
+
+	fastboot flash recovery recovery.img
+"""
+	sys.exit(1)
+def flash_recovery_use_dd(image,path,su):
+	(status,output)=commands.getstatusoutput('adb push '+image+' '+path)
+	if status !=0:
+		print 'push '+bcolors.LIGHT_BLUE+'recovery '+bcolors.FAIL+'Failed'+bcolors.ENDC
+		print output
+		sys.exit(1)
+	recovery_block=getDeviceInfo.GetRecoveryBlock().strip().strip()
+	image_name=image.split('/')[-1]
+	dd_recovery='adb shell '+su+' \"dd if='+path+image_name+' of='+recovery_block+'\"'
+	(status,output)=commands.getstatusoutput(dd_recovery)
+	# print status,output
+	if "transferred in" in output or "records in" in output:
+		print output
+		print 'flash '+bcolors.LIGHT_BLUE+'recovery '+bcolors.OKGREEN+'successfully'+bcolors.ENDC
+	else:
+		print 'flash '+bcolors.LIGHT_BLUE+'recovery '+bcolors.FAIL+'Failed'+bcolors.ENDC
+		print output
+		sys.exit(2)
+def flash_recovery_in_fastboot(image):
+	(status,output)=commands.getstatusoutput('fastboot flash recovery '+image)
+	# print status,output
+	if "OKAY" in output:
+		print 'flash '+bcolors.LIGHT_BLUE+'recovery '+bcolors.OKGREEN+'successfully'+bcolors.ENDC
+		print output
+	else:
+		print 'flash '+bcolors.LIGHT_BLUE+'recovery '+bcolors.FAIL+'Failed'+bcolors.ENDC
+		print output
+		sys.exit(2)
+	sys.exit(0)
+device_status=GetDeviceStatus.cs_wait()
+# print device_status
+if device_status==0:
+	tmp_path='sdcard/'
+elif device_status==1:
+	tmp_path='tmp/'
+else :
+	flash_recovery_in_fastboot(sys.argv[1])
+root_status=getDeviceInfo.Is_Device_Root()
+if root_status == -1:
+	print bcolors.FAIL+'FAILED'+bcolors.ENDC+':device not root ,Can\'t use dd command to flash'
+	sys.exit(1)
+# print su[root_status]
+flash_recovery_use_dd(sys.argv[1],tmp_path,su[root_status])
+if len(sys.argv)==3 and sys.argv[2]=='-n':
+	pass
+else:
+	if device_status==2:
+		output=commands.getoutput('fastboot reboot')
+		print output
+	else :
+		output=commands.getoutput('adb reboot recovery')
+		print output

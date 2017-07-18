@@ -97,9 +97,46 @@ PS1=""
 
 if test $PREV_RET_VAL -eq 0
 then
+    export PS1=$WinTitle$BYellow$PathFull$Color_Off'$(git branch &>/dev/null;\
+    if [ $? -eq 0 ]; then \
+        echo "$(echo `git status` | grep "nothing to commit\|无文件要提交" > /dev/null 2>&1; \
+        if [ "$?" -eq "0" ]; then \
+            # @4 - Clean repository - nothing to commit
+            echo "'$Green'"$(__git_ps1 " (%s)"); \
+        else \
+            # @5 - Changes to working tree
+            echo "'$IRed'"$(__git_ps1 " {%s}"); \
+        fi) "; \
+    else \
+        # @2 - Prompt when not in GIT repo
+        echo " "; \
+    fi)'"$BGreen♪ $Color_Off";
+else
+    export PS1=$WinTitle$BYellow$PathFull$Color_Off'$(git branch &>/dev/null;\
+    if [ $? -eq 0 ]; then \
+        echo "$(echo `git status` | grep "nothing to commit\|无文件要提交" > /dev/null 2>&1; \
+        if [ "$?" -eq "0" ]; then \
+            # @4 - Clean repository - nothing to commit
+            echo "'$Green'"$(__git_ps1 " (%s)"); \
+        else \
+            # @5 - Changes to working tree
+            echo "'$IRed'"$(__git_ps1 " {%s}"); \
+        fi) "; \
+    else \
+        # @2 - Prompt when not in GIT repo
+        echo " "; \
+    fi)'"$BRed♪ $Color_Off";
+fi
+}
+promptFunc_nogit()
+{
+PREV_RET_VAL=$?;
+PS1=""
+if test $PREV_RET_VAL -eq 0
+then
     export PS1=$WinTitle$BYellow$PathFull$Color_Off"$BGreen > $Color_Off";
 else
     export PS1=$WinTitle$BYellow$PathFull$Color_Off"$BRed > $Color_Off";
 fi
 }
-PROMPT_COMMAND=promptFunc
+PROMPT_COMMAND=promptFunc_nogit
